@@ -1,0 +1,14 @@
+Secciones que deberíamos incluír en la consigna 1
+Muchas serán para análisis nuestro, ya que el trabajo es de 10 PÁGINAS LAS DOS CONSIGNAS.
+1. Breve (super) EDA.
+2. Análisis de los supuestos:
+2.1. Homoscedasticidad de los residuos. Distribución. Ver si tenemos que hacer algo. 
+2.2. Distribución normal de los residuos. Ver si se cumple o no.  
+2.3. Errores correlacionados. ¿Existe? ¿Tenemos que hacer algo al respecto?
+2.4. Observaciones atípicas. ¿Son outliers o influyentes? (NO es lo mismo)
+3. Selección del modelo:
+3.1. Colinealidad entre las variables. ¿Existe? ¿Tenemos que hacer algo?
+3.2. Selección de variables.
+4. Regresión propia// dicha.
+4.1. Ver qué aplicamos en función de todo lo anterior (si Ridge, Lasso o RLM). 
+4.2. Análisis de los resultados.
