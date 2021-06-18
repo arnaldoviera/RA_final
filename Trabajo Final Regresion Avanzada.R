@@ -14,7 +14,6 @@ library(GGally)
 library(qpcR)
 library(UsingR)
 library(data.table)
-install.packages("funModeling")
 library(funModeling)
 
 
@@ -22,13 +21,12 @@ library(funModeling)
 #Cargamos el dataset
 #dos aca cada uno pone si ingreso de la data
 #Cadauno usa su directorio
-#setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   #establezco la carpeta donde voy a trabajar
+setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   #establezco la carpeta donde voy a trabajar
 #setwd("C:/Users/quintej/Desktop/MCD/Regresion Avanzada/" )   #establezco la carpeta donde voy a trabajar
 #setwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )   #establezco la carpeta donde voy a trabajar
-setwd("C:/Users/isant/OneDrive/Desktop/MCD/Regresión Avanzada/TP Final")
+#setwd("C:/Users/isant/OneDrive/Desktop/MCD/Regresión Avanzada/TP Final")
 
 data <- fread("clinton.txt")
-View(data)
 
 #creo un dataset sacando los estados; me pregunto, vale la pena hacer un one hot encoding con los estados?
 # IRU -> A mi me parece que, si Brooklyn está siendo una observación influyente (NO outlier), quizás tenga sentido.
@@ -40,11 +38,12 @@ data1<- dplyr::select(data, pje:crimen)
 #EDA? es necesario? o arrancamos con los modelos
 # JOR -> Si, creo que es necesario hacer una introd de los que se va a analizar
 # IRU -> Para conocimiento nuestro, no vamos a tener espacio para incluírlo (algo super breve)
+
 #EDA
 summary(data1)
 glimpse(data1)
 print(status(data1))
-freq(data1) 
+freq(data1) # Arnaldo -> freq no arroja nada en concreto, qué queremos ver?
 print(profiling_num(data1))
 plot_num(data1)
 describe(data1)
@@ -52,9 +51,9 @@ describe(data1)
 ### Jor -> 1. ANALISIS SOBRE LA RELACION ENTRE LAS VARIABLES####
 
 grafico1<-ggpairs(data1, title="correlogram with ggpairs()") 
-grafico2<-ggcorr(data1, nbreaks = 4, palette = "RdGy", label = TRUE, label_size = 3, label_color = "white")
-
 grafico1
+
+grafico2<-ggcorr(data1, nbreaks = 4, palette = "RdGy", label = TRUE, label_size = 3, label_color = "white")
 grafico2
 
 
@@ -93,6 +92,7 @@ summary(mod1)
 
 plot(mod1)
 
+
 # el dato 1602 esta completamente desubicado
 
 # IRU -> El gráfico QQ da distribución con outliers. OJO con el 1602 porque quizás es influyente y no outlier
@@ -100,10 +100,11 @@ plot(mod1)
 
 #JOR ->
 shapiro.test(mod1$residuals)
+
 # el test de hipótesis no confirma la normalidad.
 #Es necesario SI O SI Aplicar alguna transformacion a las variables y despues vemos el resto
 
-
+## Arnaldo => esto que sigue sirve para algo?
 criterios <- function(mmod1, maxi) {
   
   #analisis de residuos
@@ -184,8 +185,9 @@ mod2<-lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres +
            densidad + ancianos + crimen, data = data)
 
 summary(mod2)
-#DA HORRIBLE EL MODELO, POR ENDE HAY QUE VER PREVIAMENTE QUE HACEMOS CON ESA OBSERVACION
+##DA HORRIBLE EL MODELO, POR ENDE HAY QUE VER PREVIAMENTE QUE HACEMOS CON ESA OBSERVACION
 
+## Arnaldo = opinino que debemos quitarla
 
 ########################################################
 
