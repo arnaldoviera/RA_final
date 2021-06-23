@@ -23,8 +23,8 @@ library(funModeling)
 #Cadauno usa su directorio
 #setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   #establezco la carpeta donde voy a trabajar
 #setwd("C:/Users/quintej/Desktop/MCD/Regresion Avanzada/" )   #establezco la carpeta donde voy a trabajar
-setwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )   
-#setwd("C:/Users/isant/OneDrive/Desktop/MCD/RegresiÃ³n Avanzada/TP Final")
+#setwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )   
+setwd("C:/Users/isant/OneDrive/Desktop/MCD/RegresiÃ³n Avanzada/TP Final")
 
 data <- fread("clinton.txt")
 
@@ -87,6 +87,19 @@ mod1<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+cr
 
 summary(mod1)
 
+mod11<-lm(pje ~ edad + ahorros + ingpc + pobreza + veteranos + mujeres + densidad + ancianos + crimen + 
+           ingpc:pobreza + veteranos:edad + ancianos:edad + ancianos:ahorros + crimen:densidad +
+           ingpc:ahorros + ahorros:edad + crimen:ancianos + veteranos:ahorro, data=data)
+
+summary(mod11)
+
+mod12<-lm(pje ~ ingpc + pobreza + mujeres + densidad + ancianos + 
+            ingpc:pobreza + ancianos:ahorros + ingpc:ahorros + ahorros:edad, data=data)
+
+summary(mod12)
+
+# Ninguno consigue un ajuste muy bueno
+
 #JOR -> Coef determinacion muy chico, casi no hay relacion de las variables explicat con la variable respuesta
 #Algunos coef del modelo no son significativos
 
@@ -122,6 +135,7 @@ plot(PRESS(mod1)$residuals, type="l")
 #Jor --> Supuesto de normalidad
 
 library(UsingR)
+
 residuos <- residuals(mod1)
 plot(residuos)
 
@@ -194,15 +208,36 @@ vif(lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crim
 
 summary(data1)
 
+library(tidyverse)
+data1 %>%
+  ggplot(aes(edad, pje)) +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x = "Edad", y = "PJE")
+
+data1 %>%
+  ggplot(aes(ahorros, pje)) +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x = "Ahorros", y = "PJE")
+
+# pruebo con el log de la edad???
+
+data1 %>%
+  ggplot(aes(log(edad), pje)) +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  scale_x_continuous(trans = "log")+
+  labs(x = "Edad, log", y = "PJE")
 
 ###########################################################################
-#Ajustamos un modelo de regresión lineal simple mediante MCO y obtenemos los siguientes resultados:
+#Ajustamos un modelo de regresi?n lineal simple mediante MCO y obtenemos los siguientes resultados:
   
 mod1_mco<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data )
 
 summary(mod1_mco)
 
-# guardo coeficientes en un data.frame para después
+# guardo coeficientes en un data.frame para despu?s
 coeficientes <- tribble(
   ~"Modelo", ~"Intercepto", ~"Pendiente",
   "MCO", coef(mod1_mco)[1], coef(mod1_mco)[2] 
@@ -210,7 +245,7 @@ coeficientes <- tribble(
 summary(mod1_mco)
   
 
-#Gráficos de diagnóstico:
+#Gr?ficos de diagn?stico:
 par(mfrow = c(2, 2))
 plot(mod1_mco)
 par(mfrow = c(1, 1))
@@ -219,7 +254,7 @@ par(mfrow = c(1, 1))
 #La curva QQ esta bien salvo 2 extremos, las obs 1602 y 2184
 #El leverage de la obs 1602 es muy elevado
 
-#Medidas de diagnóstico:
+#Medidas de diagn?stico:
 
 
 mod1_mco_df <- 
@@ -261,7 +296,7 @@ mod2_mco<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+anciano
 summary(mod2_mco)
 
 
-#Comparación de coeficientes:
+#Comparaci?n de coeficientes:
 
 coeficientes <- 
   coeficientes %>% 
@@ -276,13 +311,13 @@ coeficientes
 
 
 
-#Gráficos de diagnóstico mod2:
+#Gr?ficos de diagn?stico mod2:
 par(mfrow = c(2, 2))
 plot(mod2_mco)
 par(mfrow = c(1, 1))
 
 
-#Medidas de diagnóstico mod2:
+#Medidas de diagn?stico mod2:
 mod2_mco_df <- 
   tibble(
     id = setdiff(1:2704, excluir),
@@ -323,7 +358,16 @@ lm.ridge(
 ## Hago prueba con el modelo Lasso
 #Preparamos matrices
 
-X_pje <- as.matrix(data1[,-12])
+View(data1)
+
+library(dplyr)
+
+X_pje <- data1 
+X_pje$pje <-  NULL
+X_pje <- as.matrix(X_pje)
+
+
+View(X_pje)
 
 Y_pje <- data1$pje
 
@@ -334,9 +378,24 @@ lambda_pje <- cv.glmnet(x = X_pje, y = Y_pje, nfolds = 5, alpha = 1)$lambda.min
 
 #Ajustamos modelo
 lasso_pje <- glmnet(x = X_pje, y = data1$pje, alpha = 1, lambda = lambda_pje)
+
 round(coefficients(lasso_pje), 4)
 
+lasso_pred <- predict(lasso_pje, s = lambda_pje, newx = X_pje)
+
+sst <- sum((Y_pje - mean(Y_pje))^2)
+sse <- sum((lasso_pred - Y_pje)^2)
+
+rsq <- 1 - sse/sst
+rsq #" R2 del modelo ajustado por Lasso
+
+
+
 # el ajuste descarto a todas las variables??? CHEQUEAR
+# IRU -> ArmÃ© un Lasso que no, entiendo que no estaba bien el dataset del renglÃ³n 350 
+# (lo  modifiquÃ© un poquito)
+# El R2 del lasso da 0.3235246 (FEO!)
+
 
 
 #Jor --> metodo forward
@@ -350,14 +409,24 @@ stepAIC(
   trace = FALSE #para no imprimir resultados parciales
 )
 
+#Call:
+#  lm(formula = pje ~ pobreza + densidad + mujeres + ahorros + veteranos + 
+#       ancianos + ingpc + crimen, data = data1)
+
+#Coefficients:
+#  (Intercept)      pobreza     densidad      mujeres      ahorros    veteranos  
+#-3.767e+01    7.659e-01    1.888e-03    1.209e+00   -3.040e-05    3.515e-01  
+#ancianos        ingpc       crimen  
+#-8.112e-02    1.772e-04   -1.539e-03
+
 
 
 #Jor --> metodo backward
 
 stepAIC(
   object = lm(pje ~ edad + ahorros + ingpc + pobreza + veteranos + mujeres + densidad + ancianos + crimen, data = data1), #punto de partida
-  scope = list(upper = lm(medv ~ 1, data = Boston)), #máximo modelo posible
-  direction = "backward", #método de selección
+  scope = list(upper = lm(medv ~ 1, data = Boston)), #m?ximo modelo posible
+  direction = "backward", #m?todo de selecci?n
   trace = F #para no imprimir resultados parciales
 )
 
@@ -380,7 +449,7 @@ data(data1)
 stepAIC(
   object = lm(pje ~ 1, data = data1), #punto de partida
   scope = list(upper = lm(pje ~ ., data = data1)), #maximo modelo posible
-  direction = "both", #método de selecció
+  direction = "both", #m?todo de selecci?
   trace = FALSE #para no imprimir resultados parciales
 )
 
@@ -430,12 +499,12 @@ mejorsub_print
 #la variable edad NUNCA la incluyo en el modelo
 
 
-#Criterios de selección de modelos
+#Criterios de selecci?n de modelos
 mejorsub_print$cp
 mejorsub_print$adjr2
 mejorsub_print$bic
 
-#Gráficos para comparar ajustes
+#Gr?ficos para comparar ajustes
 plot(mejorsub, scale = "Cp")
 plot(mejorsub, scale = "adjr2")
 plot(mejorsub, scale = "bic")
@@ -449,9 +518,16 @@ m2 <- lm(pje ~ pobreza + densidad, data = data1)
 m3 <- lm(pje ~ pobreza + densidad + mujeres, data = data1)
 m4 <- lm(pje ~ pobreza + densidad + mujeres + ahorros, data = data1)
 m5 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos, data = data1)
+m51 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + veteranos:ahorros, data = data1) # Agrego al M5 una interacciÃ³n que entiendo podrÃ­a ser significativa entre las VA (derivado del corrplot)
 m6 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos, data = data1)
+m61<- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ancianos:ahorros +
+        veteranos:ahorros, data = data1)
 m7 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc, data = data1)
+m71<- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc + ingpc:pobreza + veteranos:edad + ancianos:edad + ancianos:ahorros + crimen:densidad +
+           ingpc:ahorros + ahorros:edad + crimen:ancianos + veteranos:ahorros, data = data1)
 m8 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc + crimen, data = data1)
+m81<- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc + crimen + ingpc:pobreza + veteranos:edad + ancianos:edad + ancianos:ahorros + crimen:densidad +
+           ingpc:ahorros + ahorros:edad + crimen:ancianos + veteranos:ahorros, data = data1)
 
 
 
@@ -503,7 +579,7 @@ map_dfr(list(m1, m2, m3, m4, m5, m6, m7, m8), criterios, maxi = m8)
 #7  70.1 0.324 194771.   9.91 11499. 11546.
 #8  70.0 0.325 194674.   9    11498. 11551.
 
-# a simple vista el mejor modelo es m7 o m6 
+# a simple vista el mejor modelo es m7 o m6 (sin interaccion)
 #se tendria que hacer una prueba con los productos
 
 ################################################
@@ -583,3 +659,58 @@ res <- tribble(
   "m8", scr8, sce8, r8.1234567,
 )
 res
+
+
+#A tibble: 9 x 4
+#Modelo    SCR     SCE      R
+#<chr>   <dbl>   <dbl>  <dbl>
+#1 m0         0  280213.    NA 
+#2 m1     70344. 209869. 70344.
+#3 m2     80093. 200120.  9749.
+#4 m3     86626. 193586.  6533.
+#5 m4     89456. 190757.  2829.
+#6 m5     90507. 189706.  1051.
+#7 m6     91028. 189185.   521.
+#8 m7     91300. 188913.   273.
+#9 m8     91504. 188708.   204.
+
+# a medida que voy agregando t?rminos la SCR aumenta y la SCE disminuye
+# la diferencia entre 2 SCR sucesivas o SCE sucesivas es la contribucion de la SC secuencial
+# x ej el valor 70344 es el aporte que hace el predictor x1 para explicar la respuesta comparado con un modelo que no tiene ningun predictor
+
+  
+r1.0+r2.1+ r3.12+r4.123+r5.1234+r6.12345+r7.123456+r8.1234567
+#[1] 91504.45 
+
+scr8
+#[1] 91504.45
+
+## pruebas de los modelos con interacciones
+
+summary(m0)
+summary(m1)
+summary(m2)
+summary(m3)
+summary(m4)
+summary(m5)
+summary(m51)
+summary(m6)
+summary(m61)
+summary(m7)
+summary(m71)
+summary(m8)
+summary(m81)
+
+# Aplico logaritmo al modelo mod1
+
+mod1_mco_log<-lm(log(pje) ~ log(edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen), data=data )
+
+summary(mod1_mco_log)
+
+
+#interaccion
+
+m7_2 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc+pobreza : densidad, data = data1)
+summary(m7_2)
+
+# Iru -> La interacciÃ³n estÃ¡ arriba, junto a los modelos. Se sacaron los resultados en el summary.
