@@ -3,7 +3,6 @@
 rm( list=ls() )
 gc()
 
-install.packages("dummies", "kableExtra")
 
 library(readr)
 library(dplyr)
@@ -41,6 +40,25 @@ data <- fread("clinton.txt")
 #estadounidenses. Pueden incorporar como explicativas a cualquiera de las restantes variables presentes en
 #la base"
 
+#logaritmo
+
+Dlog <- data
+Dlog$pje <- log(Dlog$pje)
+Dlog$edad <- log(Dlog$edad)
+Dlog$ahorros <- log(Dlog$ahorros)
+Dlog$ingpc <- log(Dlog$ingpc)
+Dlog$pobreza <- log(Dlog$pobreza)
+Dlog$veteranos <- log(Dlog$veteranos)
+Dlog$densidad <- log(Dlog$densidad)
+Dlog$ancianos <- log(Dlog$ancianos)
+Dlog$crimen <- log(Dlog$crimen)
+Dlog$mujeres <- log(Dlog$mujeres)
+
+
+
+
+
+
 DS <- data
 DS$pje <- rescale(DS$pje)
 DS$edad <- rescale(DS$edad)
@@ -51,12 +69,22 @@ DS$veteranos <- rescale(DS$veteranos)
 DS$densidad <- rescale(DS$densidad)
 DS$ancianos <- rescale(DS$ancianos)
 DS$crimen <- rescale(DS$crimen)
+DS$mujeres <- rescale(DS$mujeres)
 
 ##Arnaldo DS Dataset-Reescalado
 
 summary(DS)
 
+
+
 data1<- dplyr::select(data, pje:crimen)
+data1_DS <- dplyr::select(DS, pje:crimen)
+data1_Dlog <- dplyr::select(Dlog, pje:crimen)
+
+
+## Pasé estados a datos dummies
+data_dummy <- data
+data_dummy <- cbind(data, dummy(data$estado, sep ="_"))
 
 
 #EDA? es necesario? o arrancamos con los modelos
@@ -95,6 +123,13 @@ library(psych)
 multi.hist(x = data1, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
            main = NULL)
 
+multi.hist(x = data1_DS, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
+           main = NULL)
+
+multi.hist(x = data1_Dlog, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
+           main = NULL)
+
+
 #Jor -> hay muchas variables que no parecen tener una distrib normal, y son altamente sesgadas
 
 #Jor -> del examen visual de la matriz de correlacion y los histogramas capaz que variables
@@ -111,6 +146,7 @@ mod1<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+cr
 
 summary(mod1)
 
+#FE
 mod11<-lm(pje ~ edad + ahorros + ingpc + pobreza + veteranos + mujeres + densidad + ancianos + crimen + 
            ingpc:pobreza + veteranos:edad + ancianos:edad + ancianos:ahorros + crimen:densidad +
            ingpc:ahorros + ahorros:edad + crimen:ancianos + veteranos:ahorros, data=data)
@@ -121,6 +157,21 @@ mod12<-lm(pje ~ ingpc + pobreza + mujeres + densidad + ancianos +
             ingpc:pobreza + ancianos:ahorros + ingpc:ahorros + ahorros:edad, data=data)
 
 summary(mod12)
+
+## IDEM mod1 pero escalado entre 0 y 1
+mod1_scale<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data1_DS)
+
+summary(mod1_scale)
+
+## IDEM mod1 pero en logaritmo
+mod1_log<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data1_Dlog)
+
+summary(mod1_log)
+
+## IDEM mod1 pero estado pasado a dummi###### Adjusted R-squared:  0.560
+mod1_dummystate <-lm(pje ~ . , data=data_dummy) 
+
+summary(mod1_dummystate)
 
 # Ninguno consigue un ajuste muy bueno
 
@@ -259,7 +310,11 @@ data1 %>%
   
 mod1_mco<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data )
 
+
 summary(mod1_mco)
+
+
+
 
 # guardo coeficientes en un data.frame para despu?s
 coeficientes <- tribble(
