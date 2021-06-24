@@ -3,6 +3,7 @@
 rm( list=ls() )
 gc()
 
+install.packages("dummies", "kableExtra")
 
 library(readr)
 library(dplyr)
@@ -15,16 +16,19 @@ library(qpcR)
 library(UsingR)
 library(data.table)
 library(funModeling)
+library(scales)
+library(dummies)
+library(kableExtra)
 
 
 
 #Cargamos el dataset
 #dos aca cada uno pone si ingreso de la data
 #Cadauno usa su directorio
-#setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   #establezco la carpeta donde voy a trabajar
+setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   #establezco la carpeta donde voy a trabajar
 #setwd("C:/Users/quintej/Desktop/MCD/Regresion Avanzada/" )   #establezco la carpeta donde voy a trabajar
 #setwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )   
-setwd("C:/Users/isant/OneDrive/Desktop/MCD/Regresión Avanzada/TP Final")
+#setwd("C:/Users/isant/OneDrive/Desktop/MCD/Regresión Avanzada/TP Final")
 
 data <- fread("clinton.txt")
 
@@ -32,6 +36,25 @@ data <- fread("clinton.txt")
 # IRU -> A mi me parece que, si Brooklyn está siendo una observación influyente (NO outlier), quizás tenga sentido.
 # De todas maneras, habría que ver cómo performan ambos modelos y quedarnos con el mejor. 
 # Podemos plantear ambos. 
+# dejo la consigna: "A través de un modelo de Regresión Lineal Múltiple ajustado por Mínimos Cuadrados Ordinarios,
+#estudiar el porcentaje de votos obtenidos por el candidato Bill Clinton en cada uno de los condados
+#estadounidenses. Pueden incorporar como explicativas a cualquiera de las restantes variables presentes en
+#la base"
+
+DS <- data
+DS$pje <- rescale(DS$pje)
+DS$edad <- rescale(DS$edad)
+DS$ahorros <- rescale(DS$ahorros)
+DS$ingpc <- rescale(DS$ingpc)
+DS$pobreza <- rescale(DS$pobreza)
+DS$veteranos <- rescale(DS$veteranos)
+DS$densidad <- rescale(DS$densidad)
+DS$ancianos <- rescale(DS$ancianos)
+DS$crimen <- rescale(DS$crimen)
+
+##Arnaldo DS Dataset-Reescalado
+
+summary(DS)
 
 data1<- dplyr::select(data, pje:crimen)
 
@@ -39,6 +62,7 @@ data1<- dplyr::select(data, pje:crimen)
 #EDA? es necesario? o arrancamos con los modelos
 # JOR -> Si, creo que es necesario hacer una introd de los que se va a analizar
 # IRU -> Para conocimiento nuestro, no vamos a tener espacio para incluírlo (algo super breve)
+# Arnaldo -> va eda a matar, les encanta. 
 
 #EDA
 summary(data1)
@@ -60,7 +84,7 @@ grafico2
 
 
 #JOR -> Grafico 1 De esta matriz de correlación puede observarse que las correlaciones mas altas se deben a pobreza e ingpc (0.617) pobreza y pje (0.501), veteranos y edad (0.526), ancianos y edad (0.48), crimen y densidad (0.405)
-#correlacion inversa entre ingpc y pobreza
+#correlacion inversa entre ingpc y pobreza ##Arnaldo => es correcto que sea inverso
 
 # IRU -> Yo lo comentaría pero en principio no me parecen demasiado preocupantes, 
 # no son tan altas, en todo caso, cuando analicemos modelo, vemos con cuál nos quedamos.
@@ -69,7 +93,7 @@ grafico2
 
 library(psych)
 multi.hist(x = data1, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
-           main = "")
+           main = NULL)
 
 #Jor -> hay muchas variables que no parecen tener una distrib normal, y son altamente sesgadas
 
@@ -78,7 +102,7 @@ multi.hist(x = data1, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
 #habira que probar si con una transformación logarítmica posiblemente haría más normal su distribución.
 
 # IRU -> Podemos ver también de usar Ridge o Lasso?
-
+#agregué las variables: Arnaldo
 
 ### Jor --> 2. GENERACION DEL MODELO###
 
@@ -89,7 +113,7 @@ summary(mod1)
 
 mod11<-lm(pje ~ edad + ahorros + ingpc + pobreza + veteranos + mujeres + densidad + ancianos + crimen + 
            ingpc:pobreza + veteranos:edad + ancianos:edad + ancianos:ahorros + crimen:densidad +
-           ingpc:ahorros + ahorros:edad + crimen:ancianos + veteranos:ahorro, data=data)
+           ingpc:ahorros + ahorros:edad + crimen:ancianos + veteranos:ahorros, data=data)
 
 summary(mod11)
 
@@ -127,7 +151,7 @@ hatvalues(mod1)
 library(qpcR)
 PRESS(mod1)$residuals
 
-plot(x,y)
+plot(x,y) ##no funciona Arnaldo
 barplot(PRESS(mod1)$residuals)
 plot(PRESS(mod1)$residuals, type="l")
 
@@ -270,7 +294,7 @@ mod1_mco_df <-
 
 View(mod1_mco_df)
 
-write.xlsx(mod1_mco_df, "mod1_mco_df en xls_1.xlsx")
+fwrite (mod1_mco_df, "mod1_mco_df en xls_1.xlsx") ##cambié por fwrite (no entiendo para qué hacemos el excel)
 
 influencePlot(mod1_mco)
 
