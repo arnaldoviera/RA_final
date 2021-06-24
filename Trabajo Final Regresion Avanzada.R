@@ -24,18 +24,18 @@ library(kableExtra)
 #Cargamos el dataset
 #dos aca cada uno pone si ingreso de la data
 #Cadauno usa su directorio
-setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   #establezco la carpeta donde voy a trabajar
+#setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   #establezco la carpeta donde voy a trabajar
 #setwd("C:/Users/quintej/Desktop/MCD/Regresion Avanzada/" )   #establezco la carpeta donde voy a trabajar
-#setwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )   
-#setwd("C:/Users/isant/OneDrive/Desktop/MCD/Regresión Avanzada/TP Final")
+setwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )   
+#setwd("C:/Users/isant/OneDrive/Desktop/MCD/RegresiÃ³n Avanzada/TP Final")
 
 data <- fread("clinton.txt")
 
 #creo un dataset sacando los estados; me pregunto, vale la pena hacer un one hot encoding con los estados?
-# IRU -> A mi me parece que, si Brooklyn está siendo una observación influyente (NO outlier), quizás tenga sentido.
-# De todas maneras, habría que ver cómo performan ambos modelos y quedarnos con el mejor. 
+# IRU -> A mi me parece que, si Brooklyn estÃ¡ siendo una observaciÃ³n influyente (NO outlier), quizÃ¡s tenga sentido.
+# De todas maneras, habrÃ­a que ver cÃ³mo performan ambos modelos y quedarnos con el mejor. 
 # Podemos plantear ambos. 
-# dejo la consigna: "A través de un modelo de Regresión Lineal Múltiple ajustado por Mínimos Cuadrados Ordinarios,
+# dejo la consigna: "A travÃ©s de un modelo de RegresiÃ³n Lineal MÃºltiple ajustado por MÃ­nimos Cuadrados Ordinarios,
 #estudiar el porcentaje de votos obtenidos por el candidato Bill Clinton en cada uno de los condados
 #estadounidenses. Pueden incorporar como explicativas a cualquiera de las restantes variables presentes en
 #la base"
@@ -53,8 +53,6 @@ Dlog$densidad <- log(Dlog$densidad)
 Dlog$ancianos <- log(Dlog$ancianos)
 Dlog$crimen <- log(Dlog$crimen)
 Dlog$mujeres <- log(Dlog$mujeres)
-
-
 
 
 
@@ -82,21 +80,21 @@ data1_DS <- dplyr::select(DS, pje:crimen)
 data1_Dlog <- dplyr::select(Dlog, pje:crimen)
 
 
-## Pasé estados a datos dummies
+## PasÃ© estados a datos dummies
 data_dummy <- data
 data_dummy <- cbind(data, dummy(data$estado, sep ="_"))
 
-
+View(data_dummy)
 #EDA? es necesario? o arrancamos con los modelos
 # JOR -> Si, creo que es necesario hacer una introd de los que se va a analizar
-# IRU -> Para conocimiento nuestro, no vamos a tener espacio para incluírlo (algo super breve)
+# IRU -> Para conocimiento nuestro, no vamos a tener espacio para incluÃ­rlo (algo super breve)
 # Arnaldo -> va eda a matar, les encanta. 
 
 #EDA
 summary(data1)
 glimpse(data1)
 print(status(data1))
-freq(data1) # Arnaldo -> freq no arroja nada en concreto, qué queremos ver?
+freq(data1) # Arnaldo -> freq no arroja nada en concreto, quÃ© queremos ver?
 print(profiling_num(data1))
 plot_num(data1)
 describe(data1)
@@ -111,11 +109,11 @@ grafico2
 
 
 
-#JOR -> Grafico 1 De esta matriz de correlación puede observarse que las correlaciones mas altas se deben a pobreza e ingpc (0.617) pobreza y pje (0.501), veteranos y edad (0.526), ancianos y edad (0.48), crimen y densidad (0.405)
+#JOR -> Grafico 1 De esta matriz de correlaciÃ³n puede observarse que las correlaciones mas altas se deben a pobreza e ingpc (0.617) pobreza y pje (0.501), veteranos y edad (0.526), ancianos y edad (0.48), crimen y densidad (0.405)
 #correlacion inversa entre ingpc y pobreza ##Arnaldo => es correcto que sea inverso
 
-# IRU -> Yo lo comentaría pero en principio no me parecen demasiado preocupantes, 
-# no son tan altas, en todo caso, cuando analicemos modelo, vemos con cuál nos quedamos.
+# IRU -> Yo lo comentarÃ­a pero en principio no me parecen demasiado preocupantes, 
+# no son tan altas, en todo caso, cuando analicemos modelo, vemos con cuÃ¡l nos quedamos.
 
 
 
@@ -133,11 +131,11 @@ multi.hist(x = data1_Dlog, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
 #Jor -> hay muchas variables que no parecen tener una distrib normal, y son altamente sesgadas
 
 #Jor -> del examen visual de la matriz de correlacion y los histogramas capaz que variables
-#como "ahorros", "ingp", "pobreza", "mujeres", "ancianos" y "crimen" muestran una distribución exponencial????
-#habira que probar si con una transformación logarítmica posiblemente haría más normal su distribución.
+#como "ahorros", "ingp", "pobreza", "mujeres", "ancianos" y "crimen" muestran una distribuciÃ³n exponencial????
+#habira que probar si con una transformaciÃ³n logarÃ­tmica posiblemente harÃ­a mÃ¡s normal su distribuciÃ³n.
 
-# IRU -> Podemos ver también de usar Ridge o Lasso?
-#agregué las variables: Arnaldo
+# IRU -> Podemos ver tambiÃ©n de usar Ridge o Lasso?
+#agreguÃ© las variables: Arnaldo
 
 ### Jor --> 2. GENERACION DEL MODELO###
 
@@ -178,7 +176,7 @@ summary(mod1_dummystate)
 #JOR -> Coef determinacion muy chico, casi no hay relacion de las variables explicat con la variable respuesta
 #Algunos coef del modelo no son significativos
 
-# IRU -> Lasso nos podría servir porque también elimina las variables que no están correlacionadas.
+# IRU -> Lasso nos podrÃ­a servir porque tambiÃ©n elimina las variables que no estÃ¡n correlacionadas.
 
 #vemos los datos
 
@@ -189,7 +187,7 @@ plot(mod1)
 
 # el dato 1602 esta completamente desubicado
 
-# IRU -> El gráfico QQ da distribución con outliers. OJO con el 1602 porque quizás es influyente y no outlier
+# IRU -> El grÃ¡fico QQ da distribuciÃ³n con outliers. OJO con el 1602 porque quizÃ¡s es influyente y no outlier
 # y puede requerir otro tratamiento. 
 
 
@@ -217,7 +215,7 @@ plot(residuos)
 #JOR ->
 shapiro.test(mod1$residuals)
 
-# el test de hipótesis no confirma la normalidad.
+# el test de hipÃ³tesis no confirma la normalidad.
 #Es necesario SI O SI Aplicar alguna transformacion a las variables y despues vemos el resto
 
 
@@ -259,7 +257,7 @@ influence.measures(mod1)
 
 
 # Jor _> Seleccion del modelo
-#Colinealidad entre las variables. ¿Existe? ¿Tenemos que hacer algo?
+#Colinealidad entre las variables. Â¿Existe? Â¿Tenemos que hacer algo?
 # por lo que se visuaaliza en la matriz de corr la correlacion es baja..
 #no hay indicio de colinealidad
 
@@ -349,7 +347,7 @@ mod1_mco_df <-
 
 View(mod1_mco_df)
 
-fwrite (mod1_mco_df, "mod1_mco_df en xls_1.xlsx") ##cambié por fwrite (no entiendo para qué hacemos el excel)
+fwrite (mod1_mco_df, "mod1_mco_df en xls_1.xlsx") ##cambiÃ© por fwrite (no entiendo para quÃ© hacemos el excel)
 
 influencePlot(mod1_mco)
 
@@ -471,8 +469,8 @@ rsq #" R2 del modelo ajustado por Lasso
 
 
 # el ajuste descarto a todas las variables??? CHEQUEAR
-# IRU -> Armé un Lasso que no, entiendo que no estaba bien el dataset del renglón 350 
-# (lo  modifiqué un poquito)
+# IRU -> ArmÃ© un Lasso que no, entiendo que no estaba bien el dataset del renglÃ³n 350 
+# (lo  modifiquÃ© un poquito)
 # El R2 del lasso da 0.3235246 (FEO!)
 
 
@@ -484,7 +482,7 @@ data(data1)
 stepAIC(
   object = lm(pje ~ 1, data = data1), #punto de partida
   scope = list(upper = lm(pje ~ ., data = data1)), #maximo modelo posible
-  direction = "forward", #mÃ©todo de selecciÃ³n
+  direction = "forward", #mÃÂ©todo de selecciÃÂ³n
   trace = FALSE #para no imprimir resultados parciales
 )
 
@@ -597,7 +595,7 @@ m2 <- lm(pje ~ pobreza + densidad, data = data1)
 m3 <- lm(pje ~ pobreza + densidad + mujeres, data = data1)
 m4 <- lm(pje ~ pobreza + densidad + mujeres + ahorros, data = data1)
 m5 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos, data = data1)
-m51 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + veteranos:ahorros, data = data1) # Agrego al M5 una interacción que entiendo podría ser significativa entre las VA (derivado del corrplot)
+m51 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + veteranos:ahorros, data = data1) # Agrego al M5 una interacciÃ³n que entiendo podrÃ­a ser significativa entre las VA (derivado del corrplot)
 m6 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos, data = data1)
 m61<- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ancianos:ahorros +
         veteranos:ahorros, data = data1)
@@ -792,4 +790,87 @@ summary(mod1_mco_log)
 m7_2 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc+pobreza : densidad, data = data1)
 summary(m7_2)
 
-# Iru -> La interacción está arriba, junto a los modelos. Se sacaron los resultados en el summary.
+# Iru -> La interacciÃ³n estÃ¡ arriba, junto a los modelos. Se sacaron los resultados en el summary.
+
+
+###### trabajo con IRI
+#Gr?ficos de diagn?stico mod2:
+par(mfrow = c(2, 2))
+plot(mod1_dummy)
+par(mfrow = c(1, 1))
+
+#creo modelo de regresion multiple sin modificaciones
+mod1_dummy<-lm(pje ~ ., data=data_dummy )
+
+summary(mod1_dummy)
+
+
+## Hago prueba con el modelo Lasso
+#Preparamos matrices
+
+
+library(dplyr)
+
+X_pje <- data_dummy 
+X_pje$pje <-  NULL
+X_pje <- as.matrix(X_pje)
+
+
+View(X_pje)
+
+Y_pje <- data_dummy$pje
+
+#Elegimos Lambda usando CV
+library(glmnet)
+
+set.seed(2013)
+
+lambda_pje <- cv.glmnet(x = X_pje, y = Y_pje, nfolds = 5, alpha = 1)$lambda.min
+
+#Ajustamos modelo
+lasso_pje <- glmnet(x = X_pje, y = data_dummy$pje, alpha = 1, lambda = lambda_pje)
+
+round(coefficients(lasso_pje), 4)
+
+lasso_pred <- predict(lasso_pje, s = lambda_pje, newx = X_pje)
+
+sst <- sum((Y_pje - mean(Y_pje))^2)
+sse <- sum((lasso_pred - Y_pje)^2)
+
+rsq <- 1 - sse/sst
+rsq #" R2 del modelo ajustado por Lasso
+
+
+#JOR &IRI No se puede armar este modelo Lasso
+
+
+data(data_dummy)
+
+stepAIC(
+  object = lm(pje ~ 1, data = data_dummy), #punto de partida
+  scope = list(upper = lm(pje ~ ., data = data_dummy)), #maximo modelo posible
+  direction = "forward", #mÃÂ©todo de selecciÃÂ³n
+  trace = FALSE #para no imprimir resultados parciales
+)
+
+#mejor subconjunto
+library(leaps)
+
+mejorsub_2 <- regsubsets(
+  x = pje ~ ., 
+  data = data_dummy
+)
+
+mejorsub_print_2 <- summary(mejorsub_2)
+mejorsub_print_2
+
+
+
+mod1111<-lm(pje ~ estado+condado+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data )
+
+
+summary(mod1111)
+
+par(mfrow = c(2, 2))
+plot(mod1111)
+par(mfrow = c(1, 1))
