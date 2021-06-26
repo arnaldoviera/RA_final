@@ -93,6 +93,7 @@ data1_Dlog <- dplyr::select(Dlog, pje:crimen)
 data_dummy <- data
 data_dummy <- cbind(data, dummy(data$estado, sep ="_"))
 
+<<<<<<< HEAD
 
 
 data_dummy2 <- data_dummy 
@@ -101,10 +102,25 @@ data_dummy2$edad2 <- mutate(data_dummy2, edad<35 )
 
 
 
+=======
+###zona Dummie####
+
+data_dummy$pobrezadummie<- cut(data$pobreza,              # Vector de entrada (numérico)
+    breaks=  c(1,16.8,56),                # Número o vector con los cortes
+    labels = c(0,1),           # Etiquetas para cada grupo
+   )   
+
+
+
+
+
+View(data_dummy)
+>>>>>>> bea28da69c3aa5c3d712242f8bb01250b45e7091
 #EDA? es necesario? o arrancamos con los modelos
 # JOR -> Si, creo que es necesario hacer una introd de los que se va a analizar
 # IRU -> Para conocimiento nuestro, no vamos a tener espacio para incluÃ­rlo (algo super breve)
 # Arnaldo -> va eda a matar, les encanta. 
+#jq ->hola pasaba a saludar 
 
 #EDA
 summary(data1)
