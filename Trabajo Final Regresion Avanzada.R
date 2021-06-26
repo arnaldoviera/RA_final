@@ -18,15 +18,25 @@ library(funModeling)
 library(scales)
 library(dummies)
 library(kableExtra)
+library(psych)
+library(glmnet)
+library(dplyr)
+library(leaps)
+library(UsingR)
+library(tidyverse)
+library(MASS)
+library(glmnet)
+library(leaps)
+library(purrr)
 
 
 
 #Cargamos el dataset
 #dos aca cada uno pone si ingreso de la data
 #Cadauno usa su directorio
-#setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   #establezco la carpeta donde voy a trabajar
+setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   
 #setwd("C:/Users/quintej/Desktop/MCD/Regresion Avanzada/" )   #establezco la carpeta donde voy a trabajar
-setwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )   
+#Esetwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )   
 #setwd("C:/Users/isant/OneDrive/Desktop/MCD/RegresiÃ³n Avanzada/TP Final")
 
 data <- fread("clinton.txt")
@@ -74,7 +84,6 @@ DS$mujeres <- rescale(DS$mujeres)
 summary(DS)
 
 
-
 data1<- dplyr::select(data, pje:crimen)
 data1_DS <- dplyr::select(DS, pje:crimen)
 data1_Dlog <- dplyr::select(Dlog, pje:crimen)
@@ -84,7 +93,14 @@ data1_Dlog <- dplyr::select(Dlog, pje:crimen)
 data_dummy <- data
 data_dummy <- cbind(data, dummy(data$estado, sep ="_"))
 
-View(data_dummy)
+
+
+data_dummy2 <- data_dummy 
+data_dummy2$edad2 <- mutate(data_dummy2, edad<35 )
+                            
+
+
+
 #EDA? es necesario? o arrancamos con los modelos
 # JOR -> Si, creo que es necesario hacer una introd de los que se va a analizar
 # IRU -> Para conocimiento nuestro, no vamos a tener espacio para incluÃ­rlo (algo super breve)
@@ -117,7 +133,6 @@ grafico2
 
 
 
-library(psych)
 multi.hist(x = data1, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
            main = NULL)
 
@@ -135,7 +150,6 @@ multi.hist(x = data1_Dlog, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
 #habira que probar si con una transformaciÃ³n logarÃ­tmica posiblemente harÃ­a mÃ¡s normal su distribuciÃ³n.
 
 # IRU -> Podemos ver tambiÃ©n de usar Ridge o Lasso?
-#agreguÃ© las variables: Arnaldo
 
 ### Jor --> 2. GENERACION DEL MODELO###
 
@@ -143,6 +157,99 @@ multi.hist(x = data1_Dlog, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
 mod1<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data )
 
 summary(mod1)
+
+## IDEM mod1 pero escalado entre 0 y 1
+mod1_scale<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data1_DS)
+
+summary(mod1_scale)
+
+## IDEM mod1 pero en logaritmo SE ME ROMPIÓ!
+
+mod1_log<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data1_Dlog)
+
+summary(mod1_log)
+
+## IDEM mod1 pero estado pasado a dummi###### Adjusted R-squared:  0.560
+mod1_dummystate <-lm(pje ~ . , data=data_dummy) 
+
+summary(mod1_dummystate)
+
+
+###### trabajo con IRI
+#Gr?ficos de diagn?stico mod2:
+par(mfrow = c(2, 2))
+plot(mod1_dummystate)
+par(mfrow = c(1, 1))
+
+
+
+
+
+X_pje <- data_dummy 
+X_pje$pje <-  NULL
+X_pje <- as.matrix(X_pje)
+
+
+View(X_pje)
+
+Y_pje <- data_dummy$pje
+
+#Elegimos Lambda usando CV
+
+
+set.seed(2013)
+
+lambda_pje <- cv.glmnet(x = X_pje, y = Y_pje, nfolds = 5, alpha = 1)$lambda.min
+
+#Ajustamos modelo
+lasso_pje <- glmnet(x = X_pje, y = data_dummy$pje, alpha = 1, lambda = lambda_pje)
+
+round(coefficients(lasso_pje), 4)
+
+lasso_pred <- predict(lasso_pje, s = lambda_pje, newx = X_pje)
+
+sst <- sum((Y_pje - mean(Y_pje))^2)
+sse <- sum((lasso_pred - Y_pje)^2)
+
+rsq <- 1 - sse/sst
+rsq #" R2 del modelo ajustado por Lasso
+
+
+#JOR &IRI No se puede armar este modelo Lasso
+
+
+data(data_dummy)
+
+stepAIC(
+  object = lm(pje ~ 1, data = data_dummy), #punto de partida
+  scope = list(upper = lm(pje ~ ., data = data_dummy)), #maximo modelo posible
+  direction = "forward", #mÃÂ©todo de selecciÃÂ³n
+  trace = FALSE #para no imprimir resultados parciales
+)
+
+#mejor subconjunto
+
+mejorsub_2 <- regsubsets(
+  x = pje ~ ., 
+  data = data_dummy
+)
+
+mejorsub_print_2 <- summary(mejorsub_2)
+mejorsub_print_2
+
+
+
+mod1111<-lm(pje ~ estado+condado+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data )
+
+
+summary(mod1111)
+
+par(mfrow = c(2, 2))
+plot(mod1111)
+par(mfrow = c(1, 1))
+
+
+
 
 #FE
 mod11<-lm(pje ~ edad + ahorros + ingpc + pobreza + veteranos + mujeres + densidad + ancianos + crimen + 
@@ -156,20 +263,6 @@ mod12<-lm(pje ~ ingpc + pobreza + mujeres + densidad + ancianos +
 
 summary(mod12)
 
-## IDEM mod1 pero escalado entre 0 y 1
-mod1_scale<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data1_DS)
-
-summary(mod1_scale)
-
-## IDEM mod1 pero en logaritmo
-mod1_log<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data1_Dlog)
-
-summary(mod1_log)
-
-## IDEM mod1 pero estado pasado a dummi###### Adjusted R-squared:  0.560
-mod1_dummystate <-lm(pje ~ . , data=data_dummy) 
-
-summary(mod1_dummystate)
 
 # Ninguno consigue un ajuste muy bueno
 
@@ -197,7 +290,6 @@ plot(mod1)
 rstandard(mod1)
 rstudent(mod1)
 hatvalues(mod1)
-library(qpcR)
 PRESS(mod1)$residuals
 
 plot(x,y) ##no funciona Arnaldo
@@ -207,7 +299,6 @@ plot(PRESS(mod1)$residuals, type="l")
 
 #Jor --> Supuesto de normalidad
 
-library(UsingR)
 
 residuos <- residuals(mod1)
 plot(residuos)
@@ -281,7 +372,6 @@ vif(lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crim
 
 summary(data1)
 
-library(tidyverse)
 data1 %>%
   ggplot(aes(edad, pje)) +
   geom_point() +
@@ -424,7 +514,6 @@ influenceIndexPlot(mod2_mco)
 
 ## Hago prueba con el modelo Ridge
 
-library(MASS)
 lm.ridge(
   formula = pje ~ edad + ahorros + ingpc + pobreza + veteranos + mujeres + densidad + ancianos + crimen, 
   data = data1, 
@@ -437,7 +526,6 @@ lm.ridge(
 
 View(data1)
 
-library(dplyr)
 
 X_pje <- data1 
 X_pje$pje <-  NULL
@@ -449,7 +537,6 @@ View(X_pje)
 Y_pje <- data1$pje
 
 #Elegimos Lambda usando CV
-library(glmnet)
 set.seed(2013)
 lambda_pje <- cv.glmnet(x = X_pje, y = Y_pje, nfolds = 5, alpha = 1)$lambda.min
 
@@ -543,7 +630,6 @@ stepAIC(
 
 
 #mejor subconjunto
-library(leaps)
 
 mejorsub <- regsubsets(
   x = pje ~ edad + ahorros + ingpc + pobreza + veteranos + mujeres + densidad + ancianos + crimen, 
@@ -587,7 +673,6 @@ plot(mejorsub, scale = "adjr2")
 plot(mejorsub, scale = "bic")
 
 
-library(purrr)
 
 m0 <- lm(pje ~ 1, data = data1)
 m1 <- lm(pje ~ pobreza, data = data1)
@@ -778,7 +863,7 @@ summary(m71)
 summary(m8)
 summary(m81)
 
-# Aplico logaritmo al modelo mod1
+# Aplico logaritmo al modelo mod1 ## esto está ok?
 
 mod1_mco_log<-lm(log(pje) ~ log(edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen), data=data )
 
@@ -793,84 +878,4 @@ summary(m7_2)
 # Iru -> La interacciÃ³n estÃ¡ arriba, junto a los modelos. Se sacaron los resultados en el summary.
 
 
-###### trabajo con IRI
-#Gr?ficos de diagn?stico mod2:
-par(mfrow = c(2, 2))
-plot(mod1_dummy)
-par(mfrow = c(1, 1))
 
-#creo modelo de regresion multiple sin modificaciones
-mod1_dummy<-lm(pje ~ ., data=data_dummy )
-
-summary(mod1_dummy)
-
-
-## Hago prueba con el modelo Lasso
-#Preparamos matrices
-
-
-library(dplyr)
-
-X_pje <- data_dummy 
-X_pje$pje <-  NULL
-X_pje <- as.matrix(X_pje)
-
-
-View(X_pje)
-
-Y_pje <- data_dummy$pje
-
-#Elegimos Lambda usando CV
-library(glmnet)
-
-set.seed(2013)
-
-lambda_pje <- cv.glmnet(x = X_pje, y = Y_pje, nfolds = 5, alpha = 1)$lambda.min
-
-#Ajustamos modelo
-lasso_pje <- glmnet(x = X_pje, y = data_dummy$pje, alpha = 1, lambda = lambda_pje)
-
-round(coefficients(lasso_pje), 4)
-
-lasso_pred <- predict(lasso_pje, s = lambda_pje, newx = X_pje)
-
-sst <- sum((Y_pje - mean(Y_pje))^2)
-sse <- sum((lasso_pred - Y_pje)^2)
-
-rsq <- 1 - sse/sst
-rsq #" R2 del modelo ajustado por Lasso
-
-
-#JOR &IRI No se puede armar este modelo Lasso
-
-
-data(data_dummy)
-
-stepAIC(
-  object = lm(pje ~ 1, data = data_dummy), #punto de partida
-  scope = list(upper = lm(pje ~ ., data = data_dummy)), #maximo modelo posible
-  direction = "forward", #mÃÂ©todo de selecciÃÂ³n
-  trace = FALSE #para no imprimir resultados parciales
-)
-
-#mejor subconjunto
-library(leaps)
-
-mejorsub_2 <- regsubsets(
-  x = pje ~ ., 
-  data = data_dummy
-)
-
-mejorsub_print_2 <- summary(mejorsub_2)
-mejorsub_print_2
-
-
-
-mod1111<-lm(pje ~ estado+condado+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crimen, data=data )
-
-
-summary(mod1111)
-
-par(mfrow = c(2, 2))
-plot(mod1111)
-par(mfrow = c(1, 1))
