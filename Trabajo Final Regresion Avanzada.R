@@ -55,9 +55,37 @@ clasif_estados <- read_delim("clasif_estados.csv",
 #la base"
 
 
+## Paso estados a datos dummy
+data_dummy <- data
+
+data_dummy<- cbind(data,clasif_estados) ##se pega bien
+
+data_dummy$Regiones <- as.factor(data_dummy$Regiones) 
+
+data_dummy$Este <- as.factor(data_dummy$Este) 
 
 
+data_dummy <- cbind(data_dummy, dummy(data_dummy$Regiones, sep ="_"))
 
+
+##Borro lo que no necesito:
+data_dummy$estado <- NULL
+data_dummy$estado <- NULL
+data_dummy$condado <- NULL
+data_dummy$`Descrip Estado` <- NULL
+data_dummy$Regiones <- NULL
+
+
+#borro 1 dummy por cada clase de variables que transformé:
+
+data_dummy$data_dummy_1 <- NULL #a la mierda región 1
+
+## IDEM mod1 pero estado pasado a dummy###### 
+mod1_dummy  <-lm(pje ~ . , data=data_dummy) 
+
+summary(mod1_dummy)
+
+######
 
 
 #===============
@@ -102,32 +130,6 @@ summary(DS)
 data1 <- dplyr::select(data, pje:crimen)
 data1_Dlog <- dplyr::select(Dlog, pje:crimen)
 data1_DS <- dplyr::select(DS, pje:crimen)
-
-
-## Paso estados a datos dummy
-data_dummy <- data
-
-
-data<- cbind(data,clasif_estados) ##se pega bien
-
-data_dummy <- cbind(data, dummy(region$Regiones, sep ="_"))
-
-
-##Borro lo que no necesito:
-data_dummy$estado <- NULL
-data_dummy$condado <- NULL
-data_dummy$`Descrip Estado` <- NULL
-data_dummy$Regiones <- NULL
-
-#borro 1 dummy por cada clase de variables que transformé:
-
-data_dummy$data_1 <- NULL #a la mierda región 1
-
-
-
-
-
-
 
 
 
@@ -267,11 +269,7 @@ mod1_log<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+anciano
 
 summary(mod1_log)
 
-## IDEM mod1 pero estado pasado a dummi###### Adjusted R-squared:  0.560
-view(data_dummy)
-mod1_dummy  <-lm(pje ~ . , data=data_dummy) 
 
-summary(mod1_dummy)
 
 
 ###### trabajo con IRI
