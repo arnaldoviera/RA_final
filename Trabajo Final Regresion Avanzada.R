@@ -41,6 +41,10 @@ setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )
 
 data <- fread("clinton.txt")
 
+#yo en mi PC le cambie la columna este/oeste por este solo. Si es 1, es del este si es 0 es del oeste
+clasif_estados <- read_delim("clasif_estados.csv", 
+                             ";", escape_double = FALSE, trim_ws = TRUE)
+
 #creo un dataset sacando los estados; me pregunto, vale la pena hacer un one hot encoding con los estados?
 # IRU -> A mi me parece que, si Brooklyn estÃ¡ siendo una observaciÃ³n influyente (NO outlier), quizÃ¡s tenga sentido.
 # De todas maneras, habrÃ­a que ver cÃ³mo performan ambos modelos y quedarnos con el mejor. 
@@ -50,7 +54,14 @@ data <- fread("clinton.txt")
 #estadounidenses. Pueden incorporar como explicativas a cualquiera de las restantes variables presentes en
 #la base"
 
-#logaritmo
+
+
+
+
+
+
+#===============
+#Transformación: nuevo dataset con logaritmos
 
 Dlog <- data
 Dlog$pje <- log(Dlog$pje)
@@ -64,8 +75,12 @@ Dlog$ancianos <- log(Dlog$ancianos)
 Dlog$crimen <- log(Dlog$crimen)
 Dlog$mujeres <- log(Dlog$mujeres)
 
+summary(Dlog)
 
 
+
+#===============
+#Transformación: nuevodataset escalado
 
 DS <- data
 DS$pje <- rescale(DS$pje)
@@ -79,93 +94,160 @@ DS$ancianos <- rescale(DS$ancianos)
 DS$crimen <- rescale(DS$crimen)
 DS$mujeres <- rescale(DS$mujeres)
 
-##Arnaldo DS Dataset-Reescalado
-
 summary(DS)
 
 
-data1<- dplyr::select(data, pje:crimen)
-data1_DS <- dplyr::select(DS, pje:crimen)
+## Sacamos estado y condado de los dataset
+
+data1 <- dplyr::select(data, pje:crimen)
 data1_Dlog <- dplyr::select(Dlog, pje:crimen)
+data1_DS <- dplyr::select(DS, pje:crimen)
 
 
-## PasÃ© estados a datos dummies
+## Paso estados a datos dummy
 data_dummy <- data
-data_dummy <- cbind(data, dummy(data$estado, sep ="_"))
-
-<<<<<<< HEAD
 
 
-data_dummy2 <- data_dummy 
-data_dummy2$edad2 <- mutate(data_dummy2, edad<35 )
-                            
+data<- cbind(data,clasif_estados) ##se pega bien
+
+data_dummy <- cbind(data, dummy(region$Regiones, sep ="_"))
 
 
+##Borro lo que no necesito:
+data_dummy$estado <- NULL
+data_dummy$condado <- NULL
+data_dummy$`Descrip Estado` <- NULL
+data_dummy$Regiones <- NULL
 
-=======
-###zona Dummie####
+#borro 1 dummy por cada clase de variables que transformé:
 
-data_dummy$pobrezadummie<- cut(data$pobreza,              # Vector de entrada (numérico)
-    breaks=  c(1,16.8,56),                # Número o vector con los cortes
-    labels = c(0,1),           # Etiquetas para cada grupo
-   )   
+data_dummy$data_1 <- NULL #a la mierda región 1
 
 
 
 
 
-View(data_dummy)
->>>>>>> bea28da69c3aa5c3d712242f8bb01250b45e7091
-#EDA? es necesario? o arrancamos con los modelos
-# JOR -> Si, creo que es necesario hacer una introd de los que se va a analizar
-# IRU -> Para conocimiento nuestro, no vamos a tener espacio para incluÃ­rlo (algo super breve)
-# Arnaldo -> va eda a matar, les encanta. 
-#jq ->hola pasaba a saludar 
-
-#EDA
-summary(data1)
-glimpse(data1)
-print(status(data1))
-freq(data1) # Arnaldo -> freq no arroja nada en concreto, quÃ© queremos ver?
-print(profiling_num(data1))
-plot_num(data1)
-describe(data1)
-
-### Jor -> 1. ANALISIS SOBRE LA RELACION ENTRE LAS VARIABLES####
-
-grafico1<-ggpairs(data1, title="correlogram with ggpairs()") 
-grafico1
-
-grafico2<-ggcorr(data1, nbreaks = 4, palette = "RdGy", label = TRUE, label_size = 3, label_color = "white")
-grafico2
 
 
 
-#JOR -> Grafico 1 De esta matriz de correlaciÃ³n puede observarse que las correlaciones mas altas se deben a pobreza e ingpc (0.617) pobreza y pje (0.501), veteranos y edad (0.526), ancianos y edad (0.48), crimen y densidad (0.405)
-#correlacion inversa entre ingpc y pobreza ##Arnaldo => es correcto que sea inverso
-
-# IRU -> Yo lo comentarÃ­a pero en principio no me parecen demasiado preocupantes, 
-# no son tan altas, en todo caso, cuando analicemos modelo, vemos con cuÃ¡l nos quedamos.
 
 
 
-multi.hist(x = data1, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
-           main = NULL)
-
-multi.hist(x = data1_DS, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
-           main = NULL)
-
-multi.hist(x = data1_Dlog, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
-           main = NULL)
 
 
-#Jor -> hay muchas variables que no parecen tener una distrib normal, y son altamente sesgadas
 
-#Jor -> del examen visual de la matriz de correlacion y los histogramas capaz que variables
-#como "ahorros", "ingp", "pobreza", "mujeres", "ancianos" y "crimen" muestran una distribuciÃ³n exponencial????
-#habira que probar si con una transformaciÃ³n logarÃ­tmica posiblemente harÃ­a mÃ¡s normal su distribuciÃ³n.
+#acá tomo variables contínuas de interes y hago dymmys a partir de la misma variable.
 
-# IRU -> Podemos ver tambiÃ©n de usar Ridge o Lasso?
+#parámetros de las fórmulas
+
+x1 <- 0.0000001
+x3 <- 999999999
+Quant <- 0.8
+
+#pobreza
+
+data_dummy$pobrezadummieMean <- cut(data_dummy$pobreza, # Vector de entrada (numérico)
+                                    breaks=  c(x1, mean(data_dummy$pobreza),x3),        # Número o vector con los cortes
+                                    labels = c(0,1),                           		# Etiquetas para cada grupo
+)   
+data_dummy$pobrezadummieMedian <- cut(data_dummy$pobreza,   # Vector de entrada (numérico)
+                                      breaks=  c(x1, median(data_dummy$pobreza),x3),                     
+                                      labels = c(0,1),                           
+)   
+
+data_dummy$pobrezadummieQuantile <- cut(data_dummy$pobreza,   # Vector de entrada (numérico)
+                                        breaks=  c(x1, quantile(x=data_dummy$pobreza, probs=Quant) ,x3),                     
+                                        labels = c(0,1),    
+)   
+
+
+
+#ahorros
+
+data_dummy$ahorrosdummieMean <- cut(data_dummy$ahorros, 
+                                    breaks=  c(x1, mean(data_dummy$ahorros),x3),        
+                                    labels = c(0,1),                           		
+)   
+data_dummy$ahorrosdummieMedian <- cut(data_dummy$ahorros,   # Vector de entrada (numérico)
+                                      breaks=  c(x1, median(data_dummy$ahorros),x3),                     
+                                      labels = c(0,1),                           
+)   
+
+data_dummy$ahorrosdummieQuantile <- cut(data_dummy$ahorros,   # Vector de entrada (numérico)
+                                        breaks=  c(x1, quantile(x=data_dummy$ahorros, probs=Quant) ,x3),                     
+                                        labels = c(0,1),    
+) 
+
+
+#ingpc
+
+data_dummy$ingpcdummieMean <- cut(data_dummy$ingpc, 
+                                  breaks=  c(x1, mean(data_dummy$ingpc),x3),        
+                                  labels = c(0,1),                           		
+)   
+data_dummy$ingpcdummieMedian <- cut(data_dummy$ingpc,   # Vector de entrada (numérico)
+                                    breaks=  c(x1, median(data_dummy$ingpc),x3),                     
+                                    labels = c(0,1),                           
+)   
+
+data_dummy$ingpcdummieQuantile <- cut(data_dummy$ingpc,   # Vector de entrada (numérico)
+                                      breaks=  c(x1, quantile(x=data_dummy$ingpc, probs=Quant) ,x3),                     
+                                      labels = c(0,1),    
+)   
+
+#veteranos
+
+data_dummy$veteranosdummieMean <- cut(data_dummy$veteranos, 
+                                      breaks=  c(x1, mean(data_dummy$veteranos),x3),        
+                                      labels = c(0,1),                           		
+)   
+data_dummy$veteranosdummieMedian <- cut(data_dummy$veteranos,   # Vector de entrada (numérico)
+                                        breaks=  c(x1, median(data_dummy$veteranos),x3),                     
+                                        labels = c(0,1),                           
+)   
+
+data_dummy$veteranosdummieQuantile <- cut(data_dummy$veteranos,   # Vector de entrada (numérico)
+                                          breaks=  c(x1, quantile(x=data_dummy$veteranos, probs=Quant) ,x3),                     
+                                          labels = c(0,1),    
+)   
+
+#mujeres
+
+data_dummy$mujeresdummieMean <- cut(data_dummy$mujeres, 
+                                    breaks=  c(x1, mean(data_dummy$mujeres),x3),        
+                                    labels = c(0,1),                           		
+)   
+data_dummy$mujeresdummieMedian <- cut(data_dummy$mujeres,   # Vector de entrada (numérico)
+                                      breaks=  c(x1, median(data_dummy$mujeres),x3),                     
+                                      labels = c(0,1),                           
+)   
+
+data_dummy$mujeresdummieQuantile <- cut(data_dummy$mujeres,   # Vector de entrada (numérico)
+                                        breaks=  c(x1, quantile(x=data_dummy$mujeres, probs=Quant) ,x3),                     
+                                        labels = c(0,1),    
+)   
+
+#ancianos
+
+data_dummy$ancianosdummieMean <- cut(data_dummy$ancianos, 
+                                     breaks=  c(x1, mean(data_dummy$ancianos),x3),        
+                                     labels = c(0,1),                           		
+)   
+data_dummy$ancianosdummieMedian <- cut(data_dummy$ancianos,   # Vector de entrada (numérico)
+                                       breaks=  c(x1, median(data_dummy$ancianos),x3),                     
+                                       labels = c(0,1),                           
+)   
+
+data_dummy$ancianosdummieQuantile <- cut(data_dummy$ancianos,   # Vector de entrada (numérico)
+                                         breaks=  c(x1, quantile(x=data_dummy$ancianos, probs=Quant) ,x3),                     
+                                         labels = c(0,1),    
+)   
+
+
+
+###################################
+#######GENERACION DE MODELOS#######
+###################################
 
 ### Jor --> 2. GENERACION DEL MODELO###
 
@@ -186,9 +268,10 @@ mod1_log<-lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+anciano
 summary(mod1_log)
 
 ## IDEM mod1 pero estado pasado a dummi###### Adjusted R-squared:  0.560
-mod1_dummystate <-lm(pje ~ . , data=data_dummy) 
+view(data_dummy)
+mod1_dummy  <-lm(pje ~ . , data=data_dummy) 
 
-summary(mod1_dummystate)
+summary(mod1_dummy)
 
 
 ###### trabajo con IRI
@@ -252,6 +335,8 @@ mejorsub_2 <- regsubsets(
 
 mejorsub_print_2 <- summary(mejorsub_2)
 mejorsub_print_2
+
+
 
 
 
@@ -377,6 +462,68 @@ vif(lm(pje ~ edad+ahorros+ingpc+pobreza+veteranos+mujeres+densidad+ancianos+crim
 #1.733274  1.610381  2.428866  2.057863  1.551142    1.177141  1.304469  1.611870    1.527998
  
 #Jor --> no hay VIF mayores a 5, o sea no habria problema con la colinealidad
+
+######################
+######################
+########EDA###########
+#EDA? es necesario? o arrancamos con los modelos
+# JOR -> Si, creo que es necesario hacer una introd de los que se va a analizar
+# IRU -> Para conocimiento nuestro, no vamos a tener espacio para incluÃ­rlo (algo super breve)
+# Arnaldo -> va eda a matar, les encanta. 
+#jq ->hola pasaba a saludar 
+
+#EDA
+summary(data1)
+glimpse(data1)
+print(status(data1))
+freq(data1) # Arnaldo -> freq no arroja nada en concreto, quÃ© queremos ver?
+print(profiling_num(data1))
+plot_num(data1)
+describe(data1)
+
+### Jor -> 1. ANALISIS SOBRE LA RELACION ENTRE LAS VARIABLES####
+
+grafico1<-ggpairs(data1, title="correlogram with ggpairs()") 
+grafico1
+
+grafico2<-ggcorr(data1, nbreaks = 4, palette = "RdGy", label = TRUE, label_size = 3, label_color = "white")
+grafico2
+
+
+
+#JOR -> Grafico 1 De esta matriz de correlaciÃ³n puede observarse que las correlaciones mas altas se deben a pobreza e ingpc (0.617) pobreza y pje (0.501), veteranos y edad (0.526), ancianos y edad (0.48), crimen y densidad (0.405)
+#correlacion inversa entre ingpc y pobreza ##Arnaldo => es correcto que sea inverso
+
+# IRU -> Yo lo comentarÃ­a pero en principio no me parecen demasiado preocupantes, 
+# no son tan altas, en todo caso, cuando analicemos modelo, vemos con cuÃ¡l nos quedamos.
+
+
+
+multi.hist(x = data1, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
+           main = NULL)
+
+multi.hist(x = data1_DS, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
+           main = NULL)
+
+multi.hist(x = data1_Dlog, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
+           main = NULL)
+
+
+#Jor -> hay muchas variables que no parecen tener una distrib normal, y son altamente sesgadas
+
+#Jor -> del examen visual de la matriz de correlacion y los histogramas capaz que variables
+#como "ahorros", "ingp", "pobreza", "mujeres", "ancianos" y "crimen" muestran una distribuciÃ³n exponencial????
+#habira que probar si con una transformaciÃ³n logarÃ­tmica posiblemente harÃ­a mÃ¡s normal su distribuciÃ³n.
+
+# IRU -> Podemos ver tambiÃ©n de usar Ridge o Lasso?
+
+###################################################################
+
+
+
+
+
+
 
 
 
