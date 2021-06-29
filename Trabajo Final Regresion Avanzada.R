@@ -321,6 +321,20 @@ mod_9  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres +
 summary(mod_9)
 
 
+
+excluir <- c(1602, 2184, 948,1297, 1871,1765,2356)
+ddl1 <- slice(ddl, -excluir)
+mod_10  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+                densidad + crimen + Regiones + Este + ddl_AR + ddl_CA + ddl_CO + 
+                ddl_DC + ddl_DE + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
+                ddl_KS + ddl_LA + ddl_MA + ddl_ME + ddl_MI + ddl_MN + ddl_MO + 
+                ddl_MS + ddl_NC + ddl_NE + ddl_NJ + ddl_NM + ddl_NY + ddl_OH + 
+                ddl_OR + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl1)
+summary(mod_10)
+
+plot(mod_10)
+
+
 ##########
 
 
