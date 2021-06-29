@@ -28,16 +28,17 @@ library(MASS)
 library(glmnet)
 library(leaps)
 library(purrr)
+library(corrplot)
 
 
 
 #Cargamos el dataset
 #dos aca cada uno pone si ingreso de la data
 #Cadauno usa su directorio
-setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   
+#setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   
 #setwd("C:/Users/quintej/Desktop/MCD/Regresion Avanzada/" )   #establezco la carpeta donde voy a trabajar
 #setwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )   
-#setwd("C:/Users/isant/OneDrive/Desktop/MCD/Regresión Avanzada/TP Final")
+setwd("C:/Users/isant/OneDrive/Desktop/MCD/Regresión Avanzada/TP Final")
 
 data <- fread("clinton.txt")
 
@@ -197,7 +198,7 @@ data_dummy$ingpc
 summary(mod_3)   
 
 
-        
+
 #Residual standard error: 8.058 on 2684 degrees of freedom
 #Multiple R-squared:  0.3781,	Adjusted R-squared:  0.3737 
 #F-statistic: 85.88 on 19 and 2684 DF,  p-value: < 2.2e-16
@@ -207,7 +208,7 @@ summary(mod_3)
 
 
 mod_4<- lm(pje ~ edad+pobreza + densidad + mujeres + ahorros + veteranos + ancianos + crimen +Este + veteranos:edad + ancianos:edad + ancianos:ahorros + crimen:densidad +
-              + ahorros:edad + crimen:ancianos + veteranos:ahorros, data = data_dummy)
+             + ahorros:edad + crimen:ancianos + veteranos:ahorros, data = data_dummy)
 summary(mod_4)   
 
 #Residual standard error: 8.083 on 2687 degrees of freedom
@@ -313,31 +314,116 @@ stepAIC(
 
 
 mod_9  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                          densidad + crimen + Regiones + Este + ddl_AR + ddl_CA + ddl_CO + 
-                          ddl_DC + ddl_DE + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                          ddl_KS + ddl_LA + ddl_MA + ddl_ME + ddl_MI + ddl_MN + ddl_MO + 
-                          ddl_MS + ddl_NC + ddl_NE + ddl_NJ + ddl_NM + ddl_NY + ddl_OH + 
-                          ddl_OR + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl)
-summary(mod_9)
-
-
-
-excluir <- c(1602, 2184, 948,1297, 1871,1765,2356)
-ddl1 <- slice(ddl, -excluir)
-mod_10  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
                 densidad + crimen + Regiones + Este + ddl_AR + ddl_CA + ddl_CO + 
                 ddl_DC + ddl_DE + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
                 ddl_KS + ddl_LA + ddl_MA + ddl_ME + ddl_MI + ddl_MN + ddl_MO + 
                 ddl_MS + ddl_NC + ddl_NE + ddl_NJ + ddl_NM + ddl_NY + ddl_OH + 
-                ddl_OR + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl1)
+                ddl_OR + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl)
+summary(mod_9)
+
+#Residual standard error: 6.855 on 2663 degrees of freedom
+#Multiple R-squared:  0.5535,	Adjusted R-squared:  0.5468 
+#F-statistic: 82.52 on 40 and 2663 DF,  p-value: < 2.2e-16
+
+plot(mod_9)
+
+anova(mod_9)
+
+excluir <- c(1602, 2184, 948,1297, 1871,1765,2356)
+ddl1 <- slice(ddl, -excluir)
+mod_10  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+                 densidad + crimen + Regiones + Este + ddl_AR + ddl_CA + ddl_CO + 
+                 ddl_DC + ddl_DE + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
+                 ddl_KS + ddl_LA + ddl_MA + ddl_ME + ddl_MI + ddl_MN + ddl_MO + 
+                 ddl_MS + ddl_NC + ddl_NE + ddl_NJ + ddl_NM + ddl_NY + ddl_OH + 
+                 ddl_OR + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl1)
 summary(mod_10)
+
+#Residual standard error: 6.76 on 2656 degrees of freedom
+#Multiple R-squared:  0.5633,	Adjusted R-squared:  0.5567 
+#F-statistic: 85.64 on 40 and 2656 DF,  p-value: < 2.2e-16
 
 plot(mod_10)
 
+# MOD 11: variables incluidas en el anova del mod 9
+
+mod_11  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+                densidad + Regiones + Este + ddl_AR + ddl_CA + 
+                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
+                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
+                ddl_MS + ddl_NE + ddl_OH + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl)
+summary(mod_11)
+
+#Residual standard error: 6.953 on 2674 degrees of freedom
+#Multiple R-squared:  0.5386,	Adjusted R-squared:  0.5336 
+#F-statistic: 107.6 on 29 and 2674 DF,  p-value: < 2.2e-16
+
+anova(mod_11)
+
+# MOD 12: variables reducidas
+
+mod_12 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+                 densidad + Regiones + Este + ddl_AR + ddl_CA + 
+                 ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
+                 ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
+                 ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl)
+summary(mod_12)
+
+# Residual standard error: 6.955 on 2675 degrees of freedom
+# Multiple R-squared:  0.5382,	Adjusted R-squared:  0.5334 
+# F-statistic: 111.3 on 28 and 2675 DF,  p-value: < 2.2e-16
+
+# MOD 13: variables reducidas (saco este)
+
+mod_13 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+                densidad + Regiones + ddl_AR + ddl_CA + 
+                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
+                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
+                ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl)
+summary(mod_13)
+
+#Residual standard error: 7.216 on 2676 degrees of freedom
+#Multiple R-squared:  0.5028,	Adjusted R-squared:  0.4978 
+#F-statistic: 100.2 on 27 and 2676 DF,  p-value: < 2.2e-16
+
+# mod 14: variables reducidas (saco regiones)
+
+mod_14 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+                densidad + Este + ddl_AR + ddl_CA + 
+                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
+                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
+                ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl)
+summary(mod_14)
+
+# Residual standard error: 6.961 on 2678 degrees of freedom
+# Multiple R-squared:  0.5369,	Adjusted R-squared:  0.5326 
+# F-statistic: 124.2 on 25 and 2678 DF,  p-value: < 2.2e-16
+
+plot(mod_14)
+
+# excluimos outliers
+
+excluir <- c(1602, 948)
+ddl2 <- slice(ddl, -excluir)
+
+# mod 15 -> ídem anterior sin outliers
+
+mod_15 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+                densidad + Este + ddl_AR + ddl_CA + 
+                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
+                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
+                ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl2)
+summary(mod_15)
+
+#Residual standard error: 6.889 on 2676 degrees of freedom
+#Multiple R-squared:  0.5451,	Adjusted R-squared:  0.5408 
+#F-statistic: 128.3 on 25 and 2676 DF,  p-value: < 2.2e-16
+
+plot(mod_15)
 
 ##########
 
-
+anova(mod_9, mod_15)
 
 
 
@@ -404,7 +490,7 @@ influenceIndexPlot(mod_4)
 
 mejorsub <- regsubsets(
   x = pje ~ edad + ahorros + ingpc + pobreza + veteranos + mujeres + densidad + ancianos + crimen +
-  Este + veteranos:edad + ancianos:edad + ancianos:ahorros + crimen:densidad +
+    Este + veteranos:edad + ancianos:edad + ancianos:ahorros + crimen:densidad +
     + ahorros:edad + crimen:ancianos + veteranos:ahorros, 
   data = data_dummy
 )
@@ -447,7 +533,7 @@ stepAIC(
 )
 
 mod_forward <- lm(formula = pje ~ pobreza + Este + densidad + mujeres + veteranos + 
-     ahorros + data_dummy_4 + ingpc, data = data_dummy)
+                    ahorros + data_dummy_4 + ingpc, data = data_dummy)
 
 summary(mod_forward)
 
@@ -605,7 +691,7 @@ influencePlot(m6)
 #1546 -2.55760944 0.124408191 0.0927520124
 #1602 -0.65308088 0.973947894 1.5948479827
 #2184  3.86877184 0.001587441 0.0023674894
- 
+
 
 influenceIndexPlot(m6)
 
@@ -1033,9 +1119,6 @@ res
 # la diferencia entre 2 SCR sucesivas o SCE sucesivas es la contribucion de la SC secuencial
 # x ej el valor 70344 es el aporte que hace el predictor x1 para explicar la respuesta comparado con un modelo que no tiene ningun predictor
 
-  
+
 r1.0+r2.1+ r3.12+r4.123+r5.1234+r6.12345+r7.123456+r8.1234567
 #[1] 91504.45 
-
-scr8
-#[1] 91504.45
