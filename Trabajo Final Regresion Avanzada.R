@@ -34,10 +34,10 @@ library(purrr)
 #Cargamos el dataset
 #dos aca cada uno pone si ingreso de la data
 #Cadauno usa su directorio
-#setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   
+setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   
 #setwd("C:/Users/quintej/Desktop/MCD/Regresion Avanzada/" )   #establezco la carpeta donde voy a trabajar
 #setwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )   
-setwd("C:/Users/isant/OneDrive/Desktop/MCD/Regresión Avanzada/TP Final")
+#setwd("C:/Users/isant/OneDrive/Desktop/MCD/Regresión Avanzada/TP Final")
 
 data <- fread("clinton.txt")
 
@@ -154,6 +154,8 @@ data_dummy$Este <- as.factor(data_dummy$Este)
 
 data_dummy <- cbind(data_dummy, dummy(data_dummy$Regiones, sep ="_"))
 
+#data_dummy_largo <- cbind(data, dummy_dummy(data$estado, sep ="_"))
+
 
 ##Borro lo que no necesito:
 data_dummy$estado <- NULL
@@ -191,6 +193,7 @@ summary(mod_2)
 
 mod_3<- lm(pje ~ edad+pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc + crimen +Este + ingpc:pobreza + veteranos:edad + ancianos:edad + ancianos:ahorros + crimen:densidad +
              ingpc:ahorros + ahorros:edad + crimen:ancianos + veteranos:ahorros, data = data_dummy)
+data_dummy$ingpc
 summary(mod_3)   
 
 
@@ -216,7 +219,7 @@ summary(mod_4)
 
 
 mod_5<- lm(pje ~ edad + ingpc + pobreza + densidad + mujeres + ahorros + veteranos + ancianos + crimen + Este + veteranos:edad + ancianos:edad + ancianos:ahorros + crimen:densidad +
-             + ahorros:edad + crimen:ancianos + veteranos:ahorros + ingcp:pobreza, data = data_dummy)
+             + ahorros:edad + crimen:ancianos + veteranos:ahorros + ingpc:pobreza, data = data_dummy)
 summary(mod_5)   
 
 #Residual standard error: 8.083 on 2687 degrees of freedom
@@ -273,6 +276,58 @@ summary(mod_8)
 #F-statistic: 258.4 on 6 and 2694 DF,  p-value: < 2.2e-16
 
 #Da mejor el R2, no demasiado significativo igual, A COSTA DE ELIMINAR 3 VARS (tenemos que ver que opinamos de esto).
+
+#MOD 9 Arnaldo
+
+## Paso estados a datos dummy sin cagar el resto de los dataset
+
+
+ddl <- cbind(data,clasif_estados) ##se pega bien
+
+ddl$Regiones <- as.factor(ddl$Regiones) 
+
+ddl$Este <- as.factor(ddl$Este) 
+
+
+ddl <- cbind(ddl, dummy(ddl$Regiones, sep ="_"))
+
+ddl <- cbind(ddl, dummy(ddl$estado, sep ="_"))
+
+ddl$condado <- NULL
+ddl$estado <- NULL
+ddl$estado <- NULL
+ddl$ddl_1 <- NULL
+ddl$ddl_AL <- NULL
+ddl$`Descrip Estado`<- NULL
+
+#método backward para eexperimento
+
+stepAIC(
+  object = lm(pje ~ ., data = ddl), #punto de partida
+  scope = list(upper = lm(pje ~ 1, data = ddl)), #máximo modelo posible
+  direction = "backward", #método de selección
+  trace = F #para no imprimir resultados parciales
+)
+
+#COPIAR Y PEGAR LA FORMULA
+
+
+mod_9  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+                          densidad + crimen + Regiones + Este + ddl_AR + ddl_CA + ddl_CO + 
+                          ddl_DC + ddl_DE + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
+                          ddl_KS + ddl_LA + ddl_MA + ddl_ME + ddl_MI + ddl_MN + ddl_MO + 
+                          ddl_MS + ddl_NC + ddl_NE + ddl_NJ + ddl_NM + ddl_NY + ddl_OH + 
+                          ddl_OR + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl)
+summary(mod_9)
+
+
+##########
+
+
+
+
+
+
 
 #Diagnostico
 par(mfrow = c(2, 2))
@@ -366,6 +421,8 @@ mejorsub_1
 
 #metodo forward
 
+as.data.frame(data_dummy)
+
 data(data_dummy)
 
 stepAIC(
@@ -374,6 +431,11 @@ stepAIC(
   direction = "forward", #mÃÂÃÂ©todo de selecciÃÂÃÂ³n
   trace = FALSE #para no imprimir resultados parciales
 )
+
+mod_forward <- lm(formula = pje ~ pobreza + Este + densidad + mujeres + veteranos + 
+     ahorros + data_dummy_4 + ingpc, data = data_dummy)
+
+summary(mod_forward)
 
 #Call:
 #  lm(formula = pje ~ pobreza + `Este/Oeste` + densidad + mujeres + 
@@ -386,6 +448,39 @@ stepAIC(
 #8.012e-01          4.948e-01         -2.814e-05         -1.820e+00  
 #ingpc  
 #2.172e-04 
+
+
+#método backward
+
+stepAIC(
+  object = lm(pje ~ ., data = data_dummy), #punto de partida
+  scope = list(upper = lm(pje ~ 1, data = data_dummy)), #máximo modelo posible
+  direction = "backward", #método de selección
+  trace = F #para no imprimir resultados parciales
+)
+
+
+mod_backward  <- lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+                      densidad + Este + data_dummy_4, data = data_dummy)
+summary(mod_backward)
+
+
+
+
+
+
+
+#mejor subconjunto
+
+
+mod_mejorsub2 <- regsubsets(
+  x = pje ~ . , 
+  data = data_dummy_largo
+)
+
+resumen <- summary(mod_mejorsub)
+resumen
+
 
 
 #Criterios de selecci?n de modelos
