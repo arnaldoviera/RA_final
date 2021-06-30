@@ -32,29 +32,28 @@ library(corrplot)
 
 
 
-#Cargamos el dataset
-#dos aca cada uno pone si ingreso de la data
-#Cadauno usa su directorio
-#setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   
+#===================================================================
+#::ESTE PEDAZO DE CÓDIGO ES IMPORTANTE BORRAR ANTES DE COMPARTIRLO::
+
+#Cargamos el dataset / Cadauno usa su directorio
+setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   
 #setwd("C:/Users/quintej/Desktop/MCD/Regresion Avanzada/" )   #establezco la carpeta donde voy a trabajar
 #setwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )   
-setwd("C:/Users/isant/OneDrive/Desktop/MCD/Regresión Avanzada/TP Final")
+#setwd("C:/Users/isant/OneDrive/Desktop/MCD/Regresión Avanzada/TP Final")
+#==================================================================
 
+#cardo dataset de tarea
 data <- fread("clinton.txt")
 
-#yo en mi PC le cambie la columna este/oeste por este solo. Si es 1, es del este si es 0 es del oeste
+#cargo dataset de clasificación de estados/regiones (esto es legal?)
 clasif_estados <- read_delim("clasif_estados.csv", 
                              ";", escape_double = FALSE, trim_ws = TRUE)
 
-#creo un dataset sacando los estados; me pregunto, vale la pena hacer un one hot encoding con los estados?
-# IRU -> A mi me parece que, si Brooklyn estÃÂ¡ siendo una observaciÃÂ³n influyente (NO outlier), quizÃÂ¡s tenga sentido.
-# De todas maneras, habrÃÂ?a que ver cÃÂ³mo performan ambos modelos y quedarnos con el mejor. 
-# Podemos plantear ambos. 
-# dejo la consigna: "A travÃÂ©s de un modelo de RegresiÃÂ³n Lineal MÃÂºltiple ajustado por MÃÂ?nimos Cuadrados Ordinarios,
+# CONSIGNA
+#"A traves de un modelo de Regresión Lineal Multiple ajustado por Mínimos Cuadrados Ordinarios,
 #estudiar el porcentaje de votos obtenidos por el candidato Bill Clinton en cada uno de los condados
 #estadounidenses. Pueden incorporar como explicativas a cualquiera de las restantes variables presentes en
 #la base"
-
 
 
 ## Sacamos estado y condado de los dataset
@@ -165,9 +164,9 @@ data_dummy$condado <- NULL
 data_dummy$`Descrip Estado` <- NULL
 data_dummy$Regiones <- NULL
 
-#borro 1 dummy por cada clase de variables que transformÃ©:
+#borro 1 dummy por cada clase de variables que transformÃÂ©:
 
-data_dummy$data_dummy_1 <- NULL #a la mierda regiÃ³n 1
+data_dummy$data_dummy_1 <- NULL #a la mierda regiÃÂ³n 1
 
 #MOD 1 - Modelo con todas las cuantitativas + Regiones
 
@@ -239,7 +238,7 @@ summary(mod_6)
 #Multiple R-squared:  0.2427,	Adjusted R-squared:  0.2401 
 #F-statistic: 95.91 on 9 and 2694 DF,  p-value: < 2.2e-16
 
-# EN los modelos 5 y 6 eliminé variables altamente correlacionadas y agregué algunas interacciones. 
+# EN los modelos 5 y 6 eliminÃ© variables altamente correlacionadas y agreguÃ© algunas interacciones. 
 # Performaron mal. 
 
 
@@ -252,19 +251,19 @@ summary(mod_7)
 #Multiple R-squared:  0.3519,	Adjusted R-squared:  0.3504 
 #F-statistic:   244 on 6 and 2697 DF,  p-value: < 2.2e-16
 
-# Incluí las VA con los betas más significativos del primer análisis LM. Es un buen modelo porque tiene
-# menos de 2pp de diferencia en el R2 y muchas variables menos. Me parece que es uno de los más potables.
+# IncluÃ­ las VA con los betas mÃ¡s significativos del primer anÃ¡lisis LM. Es un buen modelo porque tiene
+# menos de 2pp de diferencia en el R2 y muchas variables menos. Me parece que es uno de los mÃ¡s potables.
 
 #Diagnostico
 par(mfrow = c(2, 2))
 plot(mod_7)
 par(mfrow = c(1, 1))
 
-# Las medidas de diagnóstico no son excelentes pero si aceptables. Seguimos viendo los outliers.
+# Las medidas de diagnÃ³stico no son excelentes pero si aceptables. Seguimos viendo los outliers.
 
 # Probamos igual pero eliminando los outliers.
 
-#MOD 8 - Modelo con las cuantitativas significativas + BINARIA. Exclusión de outliers. 
+#MOD 8 - Modelo con las cuantitativas significativas + BINARIA. ExclusiÃ³n de outliers. 
 
 excluir <- c(1602, 2184, 948)
 data_dummy_ol <- slice(data_dummy, -excluir)
@@ -301,12 +300,12 @@ ddl$ddl_1 <- NULL
 ddl$ddl_AL <- NULL
 ddl$`Descrip Estado`<- NULL
 
-#método backward para eexperimento
+#mÃ©todo backward para eexperimento
 
 stepAIC(
   object = lm(pje ~ ., data = ddl), #punto de partida
-  scope = list(upper = lm(pje ~ 1, data = ddl)), #máximo modelo posible
-  direction = "backward", #método de selección
+  scope = list(upper = lm(pje ~ 1, data = ddl)), #mÃ¡ximo modelo posible
+  direction = "backward", #mÃ©todo de selecciÃ³n
   trace = F #para no imprimir resultados parciales
 )
 
@@ -406,7 +405,7 @@ plot(mod_14)
 excluir <- c(1602, 948)
 ddl2 <- slice(ddl, -excluir)
 
-# mod 15 -> ídem anterior sin outliers
+# mod 15 -> Ã­dem anterior sin outliers
 
 mod_15 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
                 densidad + Este + ddl_AR + ddl_CA + 
@@ -469,7 +468,7 @@ mod4_df <-
 
 #View(mod_4_df)
 
-#fwrite (mod_4_df, "mod1_mco_df en xls_1.xlsx") ##cambiÃÂ© por fwrite (no entiendo para quÃÂ© hacemos el excel)
+#fwrite (mod_4_df, "mod1_mco_df en xls_1.xlsx") ##cambiÃÂÃÂ© por fwrite (no entiendo para quÃÂÃÂ© hacemos el excel)
 
 influencePlot(mod_4)
 
@@ -528,7 +527,7 @@ data(data_dummy)
 stepAIC(
   object = lm(pje ~ 1, data = data_dummy), #punto de partida
   scope = list(upper = lm(pje ~ ., data = data_dummy)), #maximo modelo posible
-  direction = "forward", #mÃÂÃÂ©todo de selecciÃÂÃÂ³n
+  direction = "forward", #mÃÂÃÂÃÂÃÂ©todo de selecciÃÂÃÂÃÂÃÂ³n
   trace = FALSE #para no imprimir resultados parciales
 )
 
@@ -550,12 +549,12 @@ summary(mod_forward)
 #2.172e-04 
 
 
-#método backward
+#mÃ©todo backward
 
 stepAIC(
   object = lm(pje ~ ., data = data_dummy), #punto de partida
-  scope = list(upper = lm(pje ~ 1, data = data_dummy)), #máximo modelo posible
-  direction = "backward", #método de selección
+  scope = list(upper = lm(pje ~ 1, data = data_dummy)), #mÃ¡ximo modelo posible
+  direction = "backward", #mÃ©todo de selecciÃ³n
   trace = F #para no imprimir resultados parciales
 )
 
@@ -682,7 +681,7 @@ coeficientes <- tribble(
 )
 summary(m6)
 
-# los graficos de los residuos no los pude hacer porque está metida la variable "Este"
+# los graficos de los residuos no los pude hacer porque estÃ¡ metida la variable "Este"
 influencePlot(m6)
 
 #studRes         Hat       CookD
@@ -782,7 +781,7 @@ influenceIndexPlot(mod4_elim)
 
 
 #===============
-#TransformaciÃ³n: nuevo dataset con logaritmos
+#TransformaciÃÂ³n: nuevo dataset con logaritmos
 
 Dlog <- data
 Dlog$pje <- log(Dlog$pje)
@@ -874,7 +873,7 @@ data1_Dlog %>%
 
 
 #===============
-#TransformaciÃ³n: nuevodataset escalado
+#TransformaciÃÂ³n: nuevodataset escalado
 
 DS <- data
 DS$pje <- rescale(DS$pje)
@@ -912,9 +911,9 @@ multi.hist(x = data1_DS, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
 ###################################################################################
 ###################################################################################
 
-#acÃ¡ tomo variables contÃ?nuas de interes y hago dymmys a partir de la misma variable.
+#acÃÂ¡ tomo variables contÃ?nuas de interes y hago dymmys a partir de la misma variable.
 
-#parÃ¡metros de las fÃ³rmulas
+#parÃÂ¡metros de las fÃÂ³rmulas
 
 x1 <- 0.0000001
 x3 <- 999999999
@@ -922,16 +921,16 @@ Quant <- 0.8
 
 #pobreza
 
-data_dummy$pobrezadummieMean <- cut(data_dummy$pobreza, # Vector de entrada (numÃ©rico)
-                                    breaks=  c(x1, mean(data_dummy$pobreza),x3),        # NÃºmero o vector con los cortes
+data_dummy$pobrezadummieMean <- cut(data_dummy$pobreza, # Vector de entrada (numÃÂ©rico)
+                                    breaks=  c(x1, mean(data_dummy$pobreza),x3),        # NÃÂºmero o vector con los cortes
                                     labels = c(0,1),                           		# Etiquetas para cada grupo
 )   
-data_dummy$pobrezadummieMedian <- cut(data_dummy$pobreza,   # Vector de entrada (numÃ©rico)
+data_dummy$pobrezadummieMedian <- cut(data_dummy$pobreza,   # Vector de entrada (numÃÂ©rico)
                                       breaks=  c(x1, median(data_dummy$pobreza),x3),                     
                                       labels = c(0,1),                           
 )   
 
-data_dummy$pobrezadummieQuantile <- cut(data_dummy$pobreza,   # Vector de entrada (numÃ©rico)
+data_dummy$pobrezadummieQuantile <- cut(data_dummy$pobreza,   # Vector de entrada (numÃÂ©rico)
                                         breaks=  c(x1, quantile(x=data_dummy$pobreza, probs=Quant) ,x3),                     
                                         labels = c(0,1),    
 )   
@@ -944,12 +943,12 @@ data_dummy$ahorrosdummieMean <- cut(data_dummy$ahorros,
                                     breaks=  c(x1, mean(data_dummy$ahorros),x3),        
                                     labels = c(0,1),                           		
 )   
-data_dummy$ahorrosdummieMedian <- cut(data_dummy$ahorros,   # Vector de entrada (numÃ©rico)
+data_dummy$ahorrosdummieMedian <- cut(data_dummy$ahorros,   # Vector de entrada (numÃÂ©rico)
                                       breaks=  c(x1, median(data_dummy$ahorros),x3),                     
                                       labels = c(0,1),                           
 )   
 
-data_dummy$ahorrosdummieQuantile <- cut(data_dummy$ahorros,   # Vector de entrada (numÃ©rico)
+data_dummy$ahorrosdummieQuantile <- cut(data_dummy$ahorros,   # Vector de entrada (numÃÂ©rico)
                                         breaks=  c(x1, quantile(x=data_dummy$ahorros, probs=Quant) ,x3),                     
                                         labels = c(0,1),    
 ) 
@@ -961,12 +960,12 @@ data_dummy$ingpcdummieMean <- cut(data_dummy$ingpc,
                                   breaks=  c(x1, mean(data_dummy$ingpc),x3),        
                                   labels = c(0,1),                           		
 )   
-data_dummy$ingpcdummieMedian <- cut(data_dummy$ingpc,   # Vector de entrada (numÃ©rico)
+data_dummy$ingpcdummieMedian <- cut(data_dummy$ingpc,   # Vector de entrada (numÃÂ©rico)
                                     breaks=  c(x1, median(data_dummy$ingpc),x3),                     
                                     labels = c(0,1),                           
 )   
 
-data_dummy$ingpcdummieQuantile <- cut(data_dummy$ingpc,   # Vector de entrada (numÃ©rico)
+data_dummy$ingpcdummieQuantile <- cut(data_dummy$ingpc,   # Vector de entrada (numÃÂ©rico)
                                       breaks=  c(x1, quantile(x=data_dummy$ingpc, probs=Quant) ,x3),                     
                                       labels = c(0,1),    
 )   
@@ -977,12 +976,12 @@ data_dummy$veteranosdummieMean <- cut(data_dummy$veteranos,
                                       breaks=  c(x1, mean(data_dummy$veteranos),x3),        
                                       labels = c(0,1),                           		
 )   
-data_dummy$veteranosdummieMedian <- cut(data_dummy$veteranos,   # Vector de entrada (numÃ©rico)
+data_dummy$veteranosdummieMedian <- cut(data_dummy$veteranos,   # Vector de entrada (numÃÂ©rico)
                                         breaks=  c(x1, median(data_dummy$veteranos),x3),                     
                                         labels = c(0,1),                           
 )   
 
-data_dummy$veteranosdummieQuantile <- cut(data_dummy$veteranos,   # Vector de entrada (numÃ©rico)
+data_dummy$veteranosdummieQuantile <- cut(data_dummy$veteranos,   # Vector de entrada (numÃÂ©rico)
                                           breaks=  c(x1, quantile(x=data_dummy$veteranos, probs=Quant) ,x3),                     
                                           labels = c(0,1),    
 )   
@@ -993,12 +992,12 @@ data_dummy$mujeresdummieMean <- cut(data_dummy$mujeres,
                                     breaks=  c(x1, mean(data_dummy$mujeres),x3),        
                                     labels = c(0,1),                           		
 )   
-data_dummy$mujeresdummieMedian <- cut(data_dummy$mujeres,   # Vector de entrada (numÃ©rico)
+data_dummy$mujeresdummieMedian <- cut(data_dummy$mujeres,   # Vector de entrada (numÃÂ©rico)
                                       breaks=  c(x1, median(data_dummy$mujeres),x3),                     
                                       labels = c(0,1),                           
 )   
 
-data_dummy$mujeresdummieQuantile <- cut(data_dummy$mujeres,   # Vector de entrada (numÃ©rico)
+data_dummy$mujeresdummieQuantile <- cut(data_dummy$mujeres,   # Vector de entrada (numÃÂ©rico)
                                         breaks=  c(x1, quantile(x=data_dummy$mujeres, probs=Quant) ,x3),                     
                                         labels = c(0,1),    
 )   
@@ -1009,12 +1008,12 @@ data_dummy$ancianosdummieMean <- cut(data_dummy$ancianos,
                                      breaks=  c(x1, mean(data_dummy$ancianos),x3),        
                                      labels = c(0,1),                           		
 )   
-data_dummy$ancianosdummieMedian <- cut(data_dummy$ancianos,   # Vector de entrada (numÃ©rico)
+data_dummy$ancianosdummieMedian <- cut(data_dummy$ancianos,   # Vector de entrada (numÃÂ©rico)
                                        breaks=  c(x1, median(data_dummy$ancianos),x3),                     
                                        labels = c(0,1),                           
 )   
 
-data_dummy$ancianosdummieQuantile <- cut(data_dummy$ancianos,   # Vector de entrada (numÃ©rico)
+data_dummy$ancianosdummieQuantile <- cut(data_dummy$ancianos,   # Vector de entrada (numÃÂ©rico)
                                          breaks=  c(x1, quantile(x=data_dummy$ancianos, probs=Quant) ,x3),                     
                                          labels = c(0,1),    
 )   
@@ -1118,3 +1117,136 @@ res
 # a medida que voy agregando t?rminos la SCR aumenta y la SCE disminuye
 # la diferencia entre 2 SCR sucesivas o SCE sucesivas es la contribucion de la SC secuencial
 # x ej el valor 70344 es el aporte que hace el predictor x1 para explicar la respuesta comparado con un modelo que no tiene ningun predictor
+
+#Layla
+
+#Voy a realizar un EDA del dataset
+glimpse(data)
+
+#Tenemos las siguientes variables como caracteres: condado y estado.
+#particularmente como double todas excepto: ahorros, ingpc y crimen que
+#son de tipo integer.
+
+str(data) 
+#Tenemos 12 variables con un total de 2704 obseerevaciones, el tipo 
+#de dato asociado es "data.table" y "data.frame"
+
+#Analicemos la distribucion de frecuencia por estado
+Frec_abs=table(data$estado)
+Frec_abs
+
+Frec_abs_acum=cumsum(Frec_abs)
+Frec_abs_acum
+
+Frec_rel=prop.table(Frec_abs_acum)*100
+Frec_rel
+
+Frec_rel_abs = cumsum(Frec_rel)*100
+Frec_rel_abs
+
+library(gmodels)
+CrossTable(data$estado, prop.t=F, prop.chisq = F)
+
+#Datos numericos
+summary(data)
+
+#Esta funcion nos muestra un panorama más completo de las variables. 
+describe(data)
+
+#Missings ---- No tenemos 
+sapply(data, function(x) sum(is.na(x)))
+
+#Realicemos algunos histogramas de las variablees mas importantes
+
+histograma_edad <- ggplot(data, aes(x=edad)) +
+  ggtitle("Distribucion de la variable Edad") +
+  geom_histogram(color="#28324a", fill="#3c78d8")
+histograma_edad
+
+#Claramentee es asimetrica hacia la derecha
+histograma_ahorros <- ggplot(data, aes(x=ahorros)) +
+  ggtitle("Distribucion de la variable Ahorros") +
+  geom_histogram(color="#28324a", fill="#3c78d8")
+histograma_ahorros
+
+#ingpc
+histograma_ingpc <- ggplot(data, aes(x=ingpc)) +
+  ggtitle("Distribucion de la variable ingpc") +
+  geom_histogram(color="#28324a", fill="#3c78d8")
+histograma_ingpc
+
+histograma_pobreza <- ggplot(data, aes(x=pobreza)) +
+  ggtitle("Distribucion de la variable Pobreza") +
+  geom_histogram(color="#28324a", fill="#3c78d8")
+histograma_pobreza
+
+#Graficos de dispersion
+ggplot(data = data, aes(x = ahorros, y = edad)) + 
+  geom_point(aes(color = estado), size = 2, alpha = 0.7) +
+  xlab('Ahorros') + 
+  ylab('Edad') +
+  ggtitle('Grafico de Dispersion entre Ahorros y Edad') + 
+  theme_minimal()
+
+#Graficos de dispersion
+ggplot(data = data, aes(x = pobreza, y = mujeres)) + 
+  geom_point(aes(color = estado), size = 2, alpha = 0.7) +
+  xlab('Pobreza') + 
+  ylab('Mujeres') +
+  ggtitle('Grafico de Dispersion entre pobreza y mujeres') + 
+  theme_minimal()
+
+ggplot(data = data, aes(x = pobreza, y = crimen)) + 
+  geom_point(aes(color = estado), size = 2, alpha = 0.7) +
+  xlab('Pobreza') + 
+  ylab('Crimen') +
+  ggtitle('Grafico de Dispersion entre pobreza y crimen') + 
+  theme_minimal()
+
+#Grafico de BoxPlot
+
+ggplot(data, aes(y=pje)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=edad)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=ahorros)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=ingpc)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=pobreza)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=veteranos)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=densidad)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=ancianos)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=crimen)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+#Practicamente en todas las variables de interes, tenemos 
+#muchos outliers, podriamos darle un tratamiento para intentar
+#mejorar los modelos (es decir no quitarlos)
+
+#Por otro lado, viendo los modelos propuestos creo que los mejores
+#hasta ahora son los siguientes: mod_9, mod_10 , mod_11 , mod_12, 
+#mod_14, mod_15
+
+#Si les parece puedo probar darle un tratamiento y replicar lo que 
+#se hizo con el dataset ddl. 
+
+#Grafico de Barra: Crimen x Estado
+ggplot(data = data,
+       mapping = aes(x = estado, y = crimen)) +
+  geom_bar(stat='identity')
+
+
+
