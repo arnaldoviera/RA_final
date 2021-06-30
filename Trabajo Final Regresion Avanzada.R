@@ -335,88 +335,9 @@ mod_10  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres +
                  ddl_OR + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl1)
 summary(mod_10)
 
-#Residual standard error: 6.76 on 2656 degrees of freedom
-#Multiple R-squared:  0.5633,	Adjusted R-squared:  0.5567 
-#F-statistic: 85.64 on 40 and 2656 DF,  p-value: < 2.2e-16
-
 plot(mod_10)
 
 # MOD 11: variables incluidas en el anova del mod 9
-
-
-mod_11  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                densidad + Regiones + Este + ddl_AR + ddl_CA + 
-                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
-                ddl_MS + ddl_NE + ddl_OH + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl)
-summary(mod_11)
-
-#Residual standard error: 6.953 on 2674 degrees of freedom
-#Multiple R-squared:  0.5386,	Adjusted R-squared:  0.5336 
-#F-statistic: 107.6 on 29 and 2674 DF,  p-value: < 2.2e-16
-
-anova(mod_11)
-
-# MOD 12: variables reducidas
-
-mod_12 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                 densidad + Regiones + Este + ddl_AR + ddl_CA + 
-                 ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                 ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
-                 ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl)
-summary(mod_12)
-
-# Residual standard error: 6.955 on 2675 degrees of freedom
-# Multiple R-squared:  0.5382,	Adjusted R-squared:  0.5334 
-# F-statistic: 111.3 on 28 and 2675 DF,  p-value: < 2.2e-16
-
-# MOD 13: variables reducidas (saco este)
-
-mod_13 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                densidad + Regiones + ddl_AR + ddl_CA + 
-                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
-                ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl)
-summary(mod_13)
-
-#Residual standard error: 7.216 on 2676 degrees of freedom
-#Multiple R-squared:  0.5028,	Adjusted R-squared:  0.4978 
-#F-statistic: 100.2 on 27 and 2676 DF,  p-value: < 2.2e-16
-
-# mod 14: variables reducidas (saco regiones)
-
-mod_14 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                densidad + Este + ddl_AR + ddl_CA + 
-                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
-                ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl)
-summary(mod_14)
-
-# Residual standard error: 6.961 on 2678 degrees of freedom
-# Multiple R-squared:  0.5369,	Adjusted R-squared:  0.5326 
-# F-statistic: 124.2 on 25 and 2678 DF,  p-value: < 2.2e-16
-
-plot(mod_14)
-
-# excluimos outliers
-
-excluir <- c(1602, 948)
-ddl2 <- slice(ddl, -excluir)
-
-# mod 15 -> ídem anterior sin outliers
-
-mod_15 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                densidad + Este + ddl_AR + ddl_CA + 
-                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
-                ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl2)
-summary(mod_15)
-
-#Residual standard error: 6.889 on 2676 degrees of freedom
-#Multiple R-squared:  0.5451,	Adjusted R-squared:  0.5408 
-#F-statistic: 128.3 on 25 and 2676 DF,  p-value: < 2.2e-16
-
-plot(mod_15)
 
 mod_11  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
                 densidad + Regiones + Este + ddl_AR + ddl_CA + 
@@ -494,7 +415,7 @@ plot(mod_15)
 
 ##########
 
-anova(mod_9, mod_15)
+
 
 
 
