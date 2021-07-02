@@ -45,21 +45,142 @@ setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )
 #cardo dataset de tarea
 data <- fread("clinton.txt")
 
-#cargo dataset de clasificación de estados/regiones (esto es legal?)
-clasif_estados <- read_delim("clasif_estados.csv", 
-                             ";", escape_double = FALSE, trim_ws = TRUE)
-
 # CONSIGNA
 #"A traves de un modelo de Regresión Lineal Multiple ajustado por Mínimos Cuadrados Ordinarios,
 #estudiar el porcentaje de votos obtenidos por el candidato Bill Clinton en cada uno de los condados
 #estadounidenses. Pueden incorporar como explicativas a cualquiera de las restantes variables presentes en
 #la base"
 
+#0 EDA
 
-## Sacamos estado y condado de los dataset
 
-data1 <- dplyr::select(data, pje:crimen)
+#Voy a realizar un EDA del dataset
+glimpse(data)
 
+#Tenemos las siguientes variables como caracteres: condado y estado.
+#particularmente como double todas excepto: ahorros, ingpc y crimen que
+#son de tipo integer.
+
+str(data) 
+#Tenemos 12 variables con un total de 2704 obseerevaciones, el tipo 
+#de dato asociado es "data.table" y "data.frame"
+
+#Analicemos la distribucion de frecuencia por estado
+Frec_abs=table(data$estado)
+Frec_abs
+
+Frec_abs_acum=cumsum(Frec_abs)
+Frec_abs_acum
+
+Frec_rel=prop.table(Frec_abs_acum)*100
+Frec_rel
+
+Frec_rel_abs = cumsum(Frec_rel)*100
+Frec_rel_abs
+
+library(gmodels)
+CrossTable(data$estado, prop.t=F, prop.chisq = F)
+
+#Datos numericos
+summary(data)
+
+#Esta funcion nos muestra un panorama más completo de las variables. 
+describe(data)
+
+#Missings ---- No tenemos 
+sapply(data, function(x) sum(is.na(x)))
+
+#Realicemos algunos histogramas de las variablees mas importantes
+
+histograma_edad <- ggplot(data, aes(x=edad)) +
+  ggtitle("Distribucion de la variable Edad") +
+  geom_histogram(color="#28324a", fill="#3c78d8")
+histograma_edad
+
+#Claramentee es asimetrica hacia la derecha
+histograma_ahorros <- ggplot(data, aes(x=ahorros)) +
+  ggtitle("Distribucion de la variable Ahorros") +
+  geom_histogram(color="#28324a", fill="#3c78d8")
+histograma_ahorros
+
+#ingpc
+histograma_ingpc <- ggplot(data, aes(x=ingpc)) +
+  ggtitle("Distribucion de la variable ingpc") +
+  geom_histogram(color="#28324a", fill="#3c78d8")
+histograma_ingpc
+
+histograma_pobreza <- ggplot(data, aes(x=pobreza)) +
+  ggtitle("Distribucion de la variable Pobreza") +
+  geom_histogram(color="#28324a", fill="#3c78d8")
+histograma_pobreza
+
+#Graficos de dispersion
+ggplot(data = data, aes(x = ahorros, y = edad)) + 
+  geom_point(aes(color = estado), size = 2, alpha = 0.7) +
+  xlab('Ahorros') + 
+  ylab('Edad') +
+  ggtitle('Grafico de Dispersion entre Ahorros y Edad') + 
+  theme_minimal()
+
+#Graficos de dispersion
+ggplot(data = data, aes(x = pobreza, y = mujeres)) + 
+  geom_point(aes(color = estado), size = 2, alpha = 0.7) +
+  xlab('Pobreza') + 
+  ylab('Mujeres') +
+  ggtitle('Grafico de Dispersion entre pobreza y mujeres') + 
+  theme_minimal()
+
+ggplot(data = data, aes(x = pobreza, y = crimen)) + 
+  geom_point(aes(color = estado), size = 2, alpha = 0.7) +
+  xlab('Pobreza') + 
+  ylab('Crimen') +
+  ggtitle('Grafico de Dispersion entre pobreza y crimen') + 
+  theme_minimal()
+
+#Grafico de BoxPlot
+
+ggplot(data, aes(y=pje)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=edad)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=ahorros)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=ingpc)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=pobreza)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=veteranos)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=densidad)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=ancianos)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+ggplot(data, aes(y=crimen)) + 
+  geom_boxplot(fill="slateblue", alpha=0.2) 
+
+#Practicamente en todas las variables de interes, tenemos 
+#muchos outliers, podriamos darle un tratamiento para intentar
+#mejorar los modelos (es decir no quitarlos)
+
+#Por otro lado, viendo los modelos propuestos creo que los mejores
+#hasta ahora son los siguientes: mod_9, mod_10 , mod_11 , mod_12, 
+#mod_14, mod_15
+
+#Si les parece puedo probar darle un tratamiento y replicar lo que 
+#se hizo con el dataset data_dummy_2. 
+
+#Grafico de Barra: Crimen x Estado
+ggplot(data = data,
+       mapping = aes(x = estado, y = crimen)) +
+  geom_bar(stat='identity')
 
 
 
@@ -142,45 +263,245 @@ mfrow = c(1, 1)
 
 
 
+
+#CONSIGNA 1: regresión lineal múltiple
+
+
+#MOD 1 - Modelo con todas las cuantitativas + Regiones Según EDA "corplot" le sacamos ingpc y edad 
+
+mod_1<- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos + crimen , data = data)
+summary(mod_1)   
+
+#Residual standard error: 8.375 on 2696 degrees of freedom
+#Multiple R-squared:  0.3251,	Adjusted R-squared:  0.3234 
+#F-statistic: 185.5 on 7 and 2696 DF,  p-value: < 2.2e-16
+
+#######################################
+#######ACA IRIA COMENTARIOS DE QUÉ CORNO VIMOS EN EL MODELO 1################
+
+
 ## Paso estados a datos dummy
 data_dummy <- data
 
-data_dummy<- cbind(data,clasif_estados) ##se pega bien
+#data_dummy<- cbind(data,clasif_estados) ##se pega bien
 
-data_dummy$Regiones <- as.factor(data_dummy$Regiones) 
+#data_dummy$Regiones <- as.factor(data_dummy$Regiones) 
 
-data_dummy$Este <- as.factor(data_dummy$Este) 
+#data_dummy$Este <- as.factor(data_dummy$Este) 
 
 
-data_dummy <- cbind(data_dummy, dummy(data_dummy$Regiones, sep ="_"))
+#data_dummy <- cbind(data_dummy, dummy(data_dummy$Regiones, sep ="_"))
 
-#data_dummy_largo <- cbind(data, dummy_dummy(data$estado, sep ="_"))
+#data_dummy$estado <- NULL
+
+
+data_dummy <- cbind(data_dummy, dummy(data$estado, sep ="_"))
 
 
 ##Borro lo que no necesito:
 data_dummy$estado <- NULL
-data_dummy$estado <- NULL
 data_dummy$condado <- NULL
-data_dummy$`Descrip Estado` <- NULL
-data_dummy$Regiones <- NULL
+data_dummy$edad<- NULL # ya no se tenía en cuenta en el mod 1
+data_dummy$ingpc<- NULL# ya no se tenía en cuenta en el mod 1
+#data_dummy$`Descrip Estado` <- NULL
+#data_dummy$Regiones <- NULL
 
 #borro 1 dummy por cada clase de variables que transformÃÂ©:
 
-data_dummy$data_dummy_1 <- NULL #a la mierda regiÃÂ³n 1
-
-#MOD 1 - Modelo con todas las cuantitativas + Regiones
-
-mod_1<- lm(pje ~ edad+pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc + crimen +data_dummy_2 + data_dummy_3 + data_dummy_4, data = data_dummy)
-summary(mod_1)   
-
-#Residual standard error: 8.28 on 2691 degrees of freedom
-#Multiple R-squared:  0.3416,	Adjusted R-squared:  0.3387 
-#F-statistic: 116.4 on 12 and 2691 DF,  p-value: < 2.2e-16
+#data_dummy$data_dummy_1 <- NULL #a la mierda regiÃÂ³n 1
+data_dummy$data_dummy_AL <- NULL #a la mierda Alabam
 
 
-#MOD 2 - Modelo con todas las cuantitativas + BINARIA
 
-mod_2<- lm(pje ~ edad+pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc + crimen +Este, data = data_dummy)
+#MOD 2 - vamos a incluir todas las variables, que le qudan al dataset, para este modelo 2
+
+mod_2<- lm(pje ~ ., data = data_dummy)
+summary(mod_2)   
+
+#Residual standard error: 6.878 on 2648 degrees of freedom
+#Multiple R-squared:  0.553,	Adjusted R-squared:  0.5437 
+#F-statistic: 59.56 on 55 and 2648 DF,  p-value: < 2.2e-16 
+
+
+#MOD3 - Vemos con método backward cuales quedan
+
+
+#mÃ©todo backward para eexperimento
+
+stepAIC(
+  object = lm(pje ~ ., data = data_dummy), #punto de partida
+  scope = list(upper = lm(pje ~ 1, data = data_dummy)), #mÃ¡ximo modelo posible
+  direction = "backward", #mÃ©todo de selecciÃ³n
+  trace = F #para no imprimir resultados parciales
+)
+
+mod_3 <- lm(formula = pje ~ ahorros + pobreza + veteranos + mujeres + ##42 de las 56 variables
+              densidad + crimen + data_dummy_AR + data_dummy_AZ + data_dummy_CO + 
+              data_dummy_CT + data_dummy_DC + data_dummy_FL + data_dummy_IA + 
+              data_dummy_ID + data_dummy_IL + data_dummy_IN + data_dummy_KS + 
+              data_dummy_LA + data_dummy_MA + data_dummy_ME + data_dummy_MN + 
+              data_dummy_MS + data_dummy_MT + data_dummy_NC + data_dummy_ND + 
+              data_dummy_NE + data_dummy_NH + data_dummy_NM + data_dummy_NV + 
+              data_dummy_NY + data_dummy_OH + data_dummy_OK + data_dummy_OR + 
+              data_dummy_PA + data_dummy_RI + data_dummy_SD + data_dummy_TN + 
+              data_dummy_TX + data_dummy_UT + data_dummy_VT + data_dummy_WI + 
+              data_dummy_WY, data = data_dummy)
+
+summary(mod_3)
+
+anova(mod_3)
+## conclusiones del ANOVA hay varias que no suman en significancia
+
+#MOD4 IDEM 3 con variables no significativas según anova
+
+mod_4 <- lm(formula = pje ~ ahorros + pobreza + veteranos + mujeres + ##42 de las 56 variables
+              densidad + data_dummy_AR + data_dummy_AZ  + 
+              data_dummy_CT + data_dummy_DC + data_dummy_FL + data_dummy_IA + 
+              data_dummy_ID + data_dummy_IL + data_dummy_IN + data_dummy_KS + 
+              data_dummy_LA + data_dummy_MA + data_dummy_ME + data_dummy_MN + 
+              data_dummy_MS + data_dummy_MT + data_dummy_NC + data_dummy_ND + 
+              data_dummy_NE + data_dummy_NH + 
+              data_dummy_OH + data_dummy_OK + data_dummy_OR + 
+              data_dummy_RI + data_dummy_SD + data_dummy_TN + 
+              data_dummy_TX + data_dummy_UT + data_dummy_VT + data_dummy_WI + 
+              data_dummy_WY, data = data_dummy)
+
+summary(mod_4)
+
+#Residual standard error: 6.911 on 2667 degrees of freedom
+#Multiple R-squared:  0.5455,	Adjusted R-squared:  0.5393 
+#F-statistic:  88.9 on 36 and 2667 DF,  p-value: < 2.2e-16
+
+anova(mod_4)
+
+#MOD5 idem 4 pero sin las variables que tienen menos de 3 estrellas
+
+mod_5 <- lm(formula = pje ~ ahorros + pobreza + veteranos + mujeres + ##42 de las 56 variables
+              densidad + data_dummy_AR +  
+               data_dummy_DC + data_dummy_FL + data_dummy_IA +   data_dummy_ID + 
+              data_dummy_IL +  data_dummy_KS + data_dummy_MA +  data_dummy_MN + 
+              data_dummy_MS +  data_dummy_NC +   data_dummy_NE +
+              data_dummy_OK +  data_dummy_TN + data_dummy_TX + 
+              data_dummy_UT + data_dummy_VT + data_dummy_WI + 
+              data_dummy_WY, data = data_dummy)
+
+summary(mod_5)
+
+#Residual standard error: 7.021 on 2679 degrees of freedom
+#Multiple R-squared:  0.5288,	Adjusted R-squared:  0.5246 
+#F-statistic: 125.3 on 24 and 2679 DF,  p-value: < 2.2e-16
+
+anova(mod_5)
+
+###nos quedamos con el mod_5 como modelo directo 
+
+plot(mod_5)
+
+
+
+#MOD5_A idem 5 pero sin la observación 1602 según gráficos de diagnóstico en plot(mod_5)
+
+excluir <- c(1602)
+data_dummy_1 <- slice(data_dummy, -excluir)
+
+
+mod_5_A <- lm(formula = pje ~ ahorros + pobreza + veteranos + mujeres + ##42 de las 56 variables
+              densidad + data_dummy_AR +  
+              data_dummy_DC + data_dummy_FL + data_dummy_IA +   data_dummy_ID + 
+              data_dummy_IL +  data_dummy_KS + data_dummy_MA +  data_dummy_MN + 
+              data_dummy_MS +  data_dummy_NC +   data_dummy_NE +
+              data_dummy_OK +  data_dummy_TN + data_dummy_TX + 
+              data_dummy_UT + data_dummy_VT + data_dummy_WI + 
+              data_dummy_WY, data = data_dummy_1)
+
+summary(mod_5_A)
+
+#Residual standard error: 6.954 on 2678 degrees of freedom
+#Multiple R-squared:  0.5362,	Adjusted R-squared:  0.5321 
+#F-statistic:   129 on 24 and 2678 DF,  p-value: < 2.2e-16
+
+plot(mod_5_A)
+
+
+######listo nos quedamos con el mod_5_a
+
+#MOD_5_A1 agregamos iteraciones
+
+mod_5_A1 <- lm(formula = pje ~ ahorros + pobreza + veteranos + mujeres + densidad +
+                 ahorros : veteranos + ahorros : mujeres+ pobreza : veteranos + pobreza : mujeres +
+                 ahorros : densidad + veteranos : mujeres + pobreza : densidad + ahorros : pobreza +
+                 veteranos : densidad + mujeres : densidad + 
+                 data_dummy_AR + data_dummy_DC + data_dummy_FL + data_dummy_IA +   
+                 data_dummy_ID + data_dummy_IL + data_dummy_KS + data_dummy_MA + 
+                 data_dummy_MN + data_dummy_MS + data_dummy_NC + data_dummy_NE +
+                 data_dummy_OK + data_dummy_TN + data_dummy_TX +  data_dummy_UT + 
+                 data_dummy_VT + data_dummy_WI + data_dummy_WY, data = data_dummy_1)
+
+
+summary(mod_5_A1)
+#Residual standard error: 6.905 on 2668 degrees of freedom
+#Multiple R-squared:  0.5444,	Adjusted R-squared:  0.5386 
+#F-statistic: 93.77 on 34 and 2668 DF,  p-value: < 2.2e-16
+
+anova(mod_5_A1)
+
+
+#mod_5_A1.1 saco todas las variables que tienen menos de 3 estrellas
+
+mod_5_A1.1 <- lm(formula = pje ~ ahorros + pobreza + veteranos + mujeres + densidad +
+               pobreza : veteranos +  
+               data_dummy_AR + data_dummy_DC + data_dummy_FL + data_dummy_IA +   
+               data_dummy_ID + data_dummy_IL + data_dummy_KS + data_dummy_MA + 
+               data_dummy_MN + data_dummy_MS + data_dummy_NC + data_dummy_NE +
+               data_dummy_OK + data_dummy_TN + data_dummy_TX +  data_dummy_UT + 
+               data_dummy_VT + data_dummy_WI + data_dummy_WY, data = data_dummy_1)
+
+summary(mod_5_A1.1)
+
+#Residual standard error: 6.936 on 2677 degrees of freedom
+#Multiple R-squared:  0.5388,	Adjusted R-squared:  0.5345 
+#F-statistic: 125.1 on 25 and 2677 DF,  p-value: < 2.2e-16
+
+
+anova(mod_5_A1.1)
+
+
+#### listo, fin: nos quedamos con este modelo que incluye la iteración con veterano:pobreza
+
+
+
+#antes de pasar al punto2 de regresión logística hay que validar los supuestos:
+#normalidad
+#homocedasticidad
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#############de acá abajo es historia#################
+
+#MOD 444 - Modelo con todas las cuantitativas + BINARIA
+
+mod_44<- lm(pje ~ edad+pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc + crimen +Este, data = data_dummy)
 summary(mod_2)   
 
 #Residual standard error: 8.201 on 2693 degrees of freedom
@@ -282,29 +603,30 @@ summary(mod_8)
 ## Paso estados a datos dummy sin cagar el resto de los dataset
 
 
-ddl <- cbind(data,clasif_estados) ##se pega bien
+data_dummy_2 <- cbind(data,clasif_estados) ##se pega bien
 
-ddl$Regiones <- as.factor(ddl$Regiones) 
+data_dummy_2$Regiones <- as.factor(data_dummy_2$Regiones) 
 
-ddl$Este <- as.factor(ddl$Este) 
+data_dummy_2$Este <- as.factor(data_dummy_2$Este) 
 
 
-ddl <- cbind(ddl, dummy(ddl$Regiones, sep ="_"))
+data_dummy_2 <- cbind(data_dummy_2, dummy(data_dummy_2$Regiones, sep ="_"))
 
-ddl <- cbind(ddl, dummy(ddl$estado, sep ="_"))
+data_dummy_2 <- cbind(data_dummy_2, dummy(data_dummy_2$estado, sep ="_"))
 
-ddl$condado <- NULL
-ddl$estado <- NULL
-ddl$estado <- NULL
-ddl$ddl_1 <- NULL
-ddl$ddl_AL <- NULL
-ddl$`Descrip Estado`<- NULL
+data_dummy_2$condado <- NULL
+data_dummy_2$estado <- NULL
+data_dummy_2$estado <- NULL
+data_dummy_2$data_dummy_2_1 <- NULL
+data_dummy_2$data_dummy_2_AL <- NULL
+data_dummy_2$`Descrip Estado`<- NULL
+
 
 #mÃ©todo backward para eexperimento
 
 stepAIC(
-  object = lm(pje ~ ., data = ddl), #punto de partida
-  scope = list(upper = lm(pje ~ 1, data = ddl)), #mÃ¡ximo modelo posible
+  object = lm(pje ~ ., data = data_dummy_2), #punto de partida
+  scope = list(upper = lm(pje ~ 1, data = data_dummy_2)), #mÃ¡ximo modelo posible
   direction = "backward", #mÃ©todo de selecciÃ³n
   trace = F #para no imprimir resultados parciales
 )
@@ -313,11 +635,11 @@ stepAIC(
 
 
 mod_9  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                densidad + crimen + Regiones + Este + ddl_AR + ddl_CA + ddl_CO + 
-                ddl_DC + ddl_DE + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                ddl_KS + ddl_LA + ddl_MA + ddl_ME + ddl_MI + ddl_MN + ddl_MO + 
-                ddl_MS + ddl_NC + ddl_NE + ddl_NJ + ddl_NM + ddl_NY + ddl_OH + 
-                ddl_OR + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl)
+                densidad + crimen + Regiones + Este + data_dummy_2_AR + data_dummy_2_CA + data_dummy_2_CO + 
+                data_dummy_2_DC + data_dummy_2_DE + data_dummy_2_FL + data_dummy_2_IA + data_dummy_2_ID + data_dummy_2_IL + data_dummy_2_IN + 
+                data_dummy_2_KS + data_dummy_2_LA + data_dummy_2_MA + data_dummy_2_ME + data_dummy_2_MI + data_dummy_2_MN + data_dummy_2_MO + 
+                data_dummy_2_MS + data_dummy_2_NC + data_dummy_2_NE + data_dummy_2_NJ + data_dummy_2_NM + data_dummy_2_NY + data_dummy_2_OH + 
+                data_dummy_2_OR + data_dummy_2_PA + data_dummy_2_TN + data_dummy_2_UT + data_dummy_2_WA, data = data_dummy_2)
 summary(mod_9)
 
 #Residual standard error: 6.855 on 2663 degrees of freedom
@@ -329,13 +651,13 @@ plot(mod_9)
 anova(mod_9)
 
 excluir <- c(1602, 2184, 948,1297, 1871,1765,2356)
-ddl1 <- slice(ddl, -excluir)
+data_dummy_21 <- slice(data_dummy_2, -excluir)
 mod_10  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                 densidad + crimen + Regiones + Este + ddl_AR + ddl_CA + ddl_CO + 
-                 ddl_DC + ddl_DE + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                 ddl_KS + ddl_LA + ddl_MA + ddl_ME + ddl_MI + ddl_MN + ddl_MO + 
-                 ddl_MS + ddl_NC + ddl_NE + ddl_NJ + ddl_NM + ddl_NY + ddl_OH + 
-                 ddl_OR + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl1)
+                 densidad + crimen + Regiones + Este + data_dummy_2_AR + data_dummy_2_CA + data_dummy_2_CO + 
+                 data_dummy_2_DC + data_dummy_2_DE + data_dummy_2_FL + data_dummy_2_IA + data_dummy_2_ID + data_dummy_2_IL + data_dummy_2_IN + 
+                 data_dummy_2_KS + data_dummy_2_LA + data_dummy_2_MA + data_dummy_2_ME + data_dummy_2_MI + data_dummy_2_MN + data_dummy_2_MO + 
+                 data_dummy_2_MS + data_dummy_2_NC + data_dummy_2_NE + data_dummy_2_NJ + data_dummy_2_NM + data_dummy_2_NY + data_dummy_2_OH + 
+                 data_dummy_2_OR + data_dummy_2_PA + data_dummy_2_TN + data_dummy_2_UT + data_dummy_2_WA, data = data_dummy_21)
 summary(mod_10)
 
 #Residual standard error: 6.76 on 2656 degrees of freedom
@@ -344,13 +666,14 @@ summary(mod_10)
 
 plot(mod_10)
 
+
 # MOD 11: variables incluidas en el anova del mod 9
 
 mod_11  <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                 densidad + Regiones + Este + ddl_AR + ddl_CA + 
-                 ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                 ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
-                 ddl_MS + ddl_NE + ddl_OH + ddl_PA + ddl_TN + ddl_UT + ddl_WA, data = ddl)
+                 densidad + Regiones + Este + data_dummy_2_AR + data_dummy_2_CA + 
+                 data_dummy_2_DC + data_dummy_2_FL + data_dummy_2_IA + data_dummy_2_ID + data_dummy_2_IL + data_dummy_2_IN + 
+                 data_dummy_2_KS + data_dummy_2_MA + data_dummy_2_MN + data_dummy_2_MO + 
+                 data_dummy_2_MS + data_dummy_2_NE + data_dummy_2_OH + data_dummy_2_PA + data_dummy_2_TN + data_dummy_2_UT + data_dummy_2_WA, data = data_dummy_2)
 summary(mod_11)
 
 #Residual standard error: 6.953 on 2674 degrees of freedom
@@ -362,10 +685,10 @@ anova(mod_11)
 # MOD 12: variables reducidas
 
 mod_12 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                densidad + Regiones + Este + ddl_AR + ddl_CA + 
-                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
-                ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl)
+                densidad + Regiones + Este + data_dummy_2_AR + data_dummy_2_CA + 
+                data_dummy_2_DC + data_dummy_2_FL + data_dummy_2_IA + data_dummy_2_ID + data_dummy_2_IL + data_dummy_2_IN + 
+                data_dummy_2_KS + data_dummy_2_MA + data_dummy_2_MN + data_dummy_2_MO + 
+                data_dummy_2_MS + data_dummy_2_NE + data_dummy_2_OH + data_dummy_2_TN + data_dummy_2_UT + data_dummy_2_WA, data = data_dummy_2)
 summary(mod_12)
 
 # Residual standard error: 6.955 on 2675 degrees of freedom
@@ -375,10 +698,10 @@ summary(mod_12)
 # MOD 13: variables reducidas (saco este)
 
 mod_13 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                densidad + Regiones + ddl_AR + ddl_CA + 
-                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
-                ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl)
+                densidad + Regiones + data_dummy_2_AR + data_dummy_2_CA + 
+                data_dummy_2_DC + data_dummy_2_FL + data_dummy_2_IA + data_dummy_2_ID + data_dummy_2_IL + data_dummy_2_IN + 
+                data_dummy_2_KS + data_dummy_2_MA + data_dummy_2_MN + data_dummy_2_MO + 
+                data_dummy_2_MS + data_dummy_2_NE + data_dummy_2_OH + data_dummy_2_TN + data_dummy_2_UT + data_dummy_2_WA, data = data_dummy_2)
 summary(mod_13)
 
 #Residual standard error: 7.216 on 2676 degrees of freedom
@@ -388,10 +711,10 @@ summary(mod_13)
 # mod 14: variables reducidas (saco regiones)
 
 mod_14 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                densidad + Este + ddl_AR + ddl_CA + 
-                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
-                ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl)
+                densidad + Este + data_dummy_2_AR + data_dummy_2_CA + 
+                data_dummy_2_DC + data_dummy_2_FL + data_dummy_2_IA + data_dummy_2_ID + data_dummy_2_IL + data_dummy_2_IN + 
+                data_dummy_2_KS + data_dummy_2_MA + data_dummy_2_MN + data_dummy_2_MO + 
+                data_dummy_2_MS + data_dummy_2_NE + data_dummy_2_OH + data_dummy_2_TN + data_dummy_2_UT + data_dummy_2_WA, data = data_dummy_2)
 summary(mod_14)
 
 # Residual standard error: 6.961 on 2678 degrees of freedom
@@ -403,15 +726,16 @@ plot(mod_14)
 # excluimos outliers
 
 excluir <- c(1602, 948)
-ddl2 <- slice(ddl, -excluir)
+data_dummy_22 <- slice(data_dummy_2, -excluir)
 
 # mod 15 -> Ã­dem anterior sin outliers
 
+
 mod_15 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
-                densidad + Este + ddl_AR + ddl_CA + 
-                ddl_DC + ddl_FL + ddl_IA + ddl_ID + ddl_IL + ddl_IN + 
-                ddl_KS + ddl_MA + ddl_MN + ddl_MO + 
-                ddl_MS + ddl_NE + ddl_OH + ddl_TN + ddl_UT + ddl_WA, data = ddl2)
+                densidad + Este + data_dummy_2_AR + data_dummy_2_CA + 
+                data_dummy_2_DC + data_dummy_2_FL + data_dummy_2_IA + data_dummy_2_ID + data_dummy_2_IL + data_dummy_2_IN + 
+                data_dummy_2_KS + data_dummy_2_MA + data_dummy_2_MN + data_dummy_2_MO + 
+                data_dummy_2_MS + data_dummy_2_NE + data_dummy_2_OH + data_dummy_2_TN + data_dummy_2_UT + data_dummy_2_WA, data = data_dummy_22)
 summary(mod_15)
 
 #Residual standard error: 6.889 on 2676 degrees of freedom
@@ -466,7 +790,7 @@ mod4_df <-
     cook = cooks.distance(mod_4)
   )
 
-#View(mod_4_df)
+View(mod_4_df)
 
 #fwrite (mod_4_df, "mod1_mco_df en xls_1.xlsx") ##cambiÃÂÃÂ© por fwrite (no entiendo para quÃÂÃÂ© hacemos el excel)
 
@@ -779,474 +1103,42 @@ influenceIndexPlot(mod4_elim)
 
 
 
-
-#===============
-#TransformaciÃÂ³n: nuevo dataset con logaritmos
-
-Dlog <- data
-Dlog$pje <- log(Dlog$pje)
-Dlog$edad <- log(Dlog$edad)
-Dlog$ahorros <- log(Dlog$ahorros)
-Dlog$ingpc <- log(Dlog$ingpc)
-Dlog$pobreza <- log(Dlog$pobreza)
-Dlog$veteranos <- log(Dlog$veteranos)
-Dlog$densidad <- log(Dlog$densidad)
-Dlog$ancianos <- log(Dlog$ancianos)
-Dlog$crimen <- log(Dlog$crimen)
-Dlog$mujeres <- log(Dlog$mujeres)
-
-
-
-summary(Dlog)
-data1_Dlog <- dplyr::select(Dlog, pje:crimen)
-
-multi.hist(x = data1_Dlog, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
-           main = NULL)
-
-
-#Visualizo que relacion tiene cada variable con la respuesta
-mfrow = c(2, 2)
-data1_Dlog %>%
-  ggplot(aes(Dlog$edad, pje)) +
-  geom_point() +
-  scale_y_continuous(labels = scales::dollar) +
-  labs(x = "Log Edad", y = "PJE")
-
-data1_Dlog %>%
-  ggplot(aes(Dlog$ahorros, pje)) +
-  geom_point() +
-  scale_y_continuous(labels = scales::dollar) +
-  labs(x = "Log Ahorros", y = "PJE")
-
-
-data1_Dlog %>%
-  ggplot(aes(Dlog$ingpc, pje)) +
-  geom_point() +
-  scale_y_continuous(labels = scales::dollar) +
-  labs(x = "Log ingpc", y = "PJE")
-
-
-data1_Dlog %>%
-  ggplot(aes(Dlog$pobreza, pje)) +
-  geom_point() +
-  scale_y_continuous(labels = scales::dollar) +
-  labs(x = "Log Pobreza", y = "PJE")
-
-
-data1_Dlog %>%
-  ggplot(aes(Dlog$veteranos, pje)) +
-  geom_point() +
-  scale_y_continuous(labels = scales::dollar) +
-  labs(x = "Log Veteranos", y = "PJE")
-
-
-data1_Dlog %>%
-  ggplot(aes(Dlog$mujeres, pje)) +
-  geom_point() +
-  scale_y_continuous(labels = scales::dollar) +
-  labs(x = "Log Mujeres", y = "PJE")
-
-data1_Dlog %>%
-  ggplot(aes(Dlog$ancianos, pje)) +
-  geom_point() +
-  scale_y_continuous(labels = scales::dollar) +
-  labs(x = "Log Ancianos", y = "PJE")
-
-
-data1_Dlog %>%
-  ggplot(aes(Dlog$crimen, pje)) +
-  geom_point() +
-  scale_y_continuous(labels = scales::dollar) +
-  labs(x = "Log Crimen", y = "PJE")
-
-
-
-data1_Dlog %>%
-  ggplot(aes(Dlog$densidad, pje)) +
-  geom_point() +
-  scale_y_continuous(labels = scales::dollar) +
-  labs(x = "Log Densidad", y = "PJE")
-
-
-
-
-
-
-#===============
-#TransformaciÃÂ³n: nuevodataset escalado
-
-DS <- data
-DS$pje <- rescale(DS$pje)
-DS$edad <- rescale(DS$edad)
-DS$ahorros <- rescale(DS$ahorros)
-DS$ingpc <- rescale(DS$ingpc)
-DS$pobreza <- rescale(DS$pobreza)
-DS$veteranos <- rescale(DS$veteranos)
-DS$densidad <- rescale(DS$densidad)
-DS$ancianos <- rescale(DS$ancianos)
-DS$crimen <- rescale(DS$crimen)
-DS$mujeres <- rescale(DS$mujeres)
-
-summary(DS)
-
-data1_DS <- dplyr::select(DS, pje:crimen)
-
-
-multi.hist(x = data1_DS, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
-           main = NULL)
-
-
-
-
-
-
-
-
-
-
-
-
+#############empecé el punto 2##########
 
 
 ###################################################################################
 ###################################################################################
 
-#acÃÂ¡ tomo variables contÃ?nuas de interes y hago dymmys a partir de la misma variable.
+#creo variable de clase a partir de pje
 
-#parÃÂ¡metros de las fÃÂ³rmulas
 
-x1 <- 0.0000001
-x3 <- 999999999
-Quant <- 0.8
-
-#pobreza
-
-data_dummy$pobrezadummieMean <- cut(data_dummy$pobreza, # Vector de entrada (numÃÂ©rico)
-                                    breaks=  c(x1, mean(data_dummy$pobreza),x3),        # NÃÂºmero o vector con los cortes
-                                    labels = c(0,1),                           		# Etiquetas para cada grupo
-)   
-data_dummy$pobrezadummieMedian <- cut(data_dummy$pobreza,   # Vector de entrada (numÃÂ©rico)
-                                      breaks=  c(x1, median(data_dummy$pobreza),x3),                     
-                                      labels = c(0,1),                           
+data_dummy_22$pje_class <- cut(data_dummy_22$pje, # Vector de entrada (numÃÂ©rico)
+                        breaks=  c(min(data_dummy_22$pje), 50.000000, max(data_dummy_22$pje)),        # NÃÂºmero o vector con los cortes
+                        labels = c(0,1),                           		# Etiquetas para cada grupo
 )   
 
-data_dummy$pobrezadummieQuantile <- cut(data_dummy$pobreza,   # Vector de entrada (numÃÂ©rico)
-                                        breaks=  c(x1, quantile(x=data_dummy$pobreza, probs=Quant) ,x3),                     
-                                        labels = c(0,1),    
+data$pje_class <- cut(data_dummy$pje, # Vector de entrada (numÃÂ©rico)
+                            breaks=  c(min(data_dummy$pje), 50.000000, max(data_dummy$pje)),        # NÃÂºmero o vector con los cortes
+                            labels = c(0,1),                           		# Etiquetas para cada grupo
 )   
 
-
-
-#ahorros
-
-data_dummy$ahorrosdummieMean <- cut(data_dummy$ahorros, 
-                                    breaks=  c(x1, mean(data_dummy$ahorros),x3),        
-                                    labels = c(0,1),                           		
-)   
-data_dummy$ahorrosdummieMedian <- cut(data_dummy$ahorros,   # Vector de entrada (numÃÂ©rico)
-                                      breaks=  c(x1, median(data_dummy$ahorros),x3),                     
-                                      labels = c(0,1),                           
-)   
-
-data_dummy$ahorrosdummieQuantile <- cut(data_dummy$ahorros,   # Vector de entrada (numÃÂ©rico)
-                                        breaks=  c(x1, quantile(x=data_dummy$ahorros, probs=Quant) ,x3),                     
-                                        labels = c(0,1),    
-) 
-
-
-#ingpc
-
-data_dummy$ingpcdummieMean <- cut(data_dummy$ingpc, 
-                                  breaks=  c(x1, mean(data_dummy$ingpc),x3),        
-                                  labels = c(0,1),                           		
-)   
-data_dummy$ingpcdummieMedian <- cut(data_dummy$ingpc,   # Vector de entrada (numÃÂ©rico)
-                                    breaks=  c(x1, median(data_dummy$ingpc),x3),                     
-                                    labels = c(0,1),                           
-)   
-
-data_dummy$ingpcdummieQuantile <- cut(data_dummy$ingpc,   # Vector de entrada (numÃÂ©rico)
-                                      breaks=  c(x1, quantile(x=data_dummy$ingpc, probs=Quant) ,x3),                     
-                                      labels = c(0,1),    
-)   
-
-#veteranos
-
-data_dummy$veteranosdummieMean <- cut(data_dummy$veteranos, 
-                                      breaks=  c(x1, mean(data_dummy$veteranos),x3),        
-                                      labels = c(0,1),                           		
-)   
-data_dummy$veteranosdummieMedian <- cut(data_dummy$veteranos,   # Vector de entrada (numÃÂ©rico)
-                                        breaks=  c(x1, median(data_dummy$veteranos),x3),                     
-                                        labels = c(0,1),                           
-)   
-
-data_dummy$veteranosdummieQuantile <- cut(data_dummy$veteranos,   # Vector de entrada (numÃÂ©rico)
-                                          breaks=  c(x1, quantile(x=data_dummy$veteranos, probs=Quant) ,x3),                     
-                                          labels = c(0,1),    
-)   
-
-#mujeres
-
-data_dummy$mujeresdummieMean <- cut(data_dummy$mujeres, 
-                                    breaks=  c(x1, mean(data_dummy$mujeres),x3),        
-                                    labels = c(0,1),                           		
-)   
-data_dummy$mujeresdummieMedian <- cut(data_dummy$mujeres,   # Vector de entrada (numÃÂ©rico)
-                                      breaks=  c(x1, median(data_dummy$mujeres),x3),                     
-                                      labels = c(0,1),                           
-)   
-
-data_dummy$mujeresdummieQuantile <- cut(data_dummy$mujeres,   # Vector de entrada (numÃÂ©rico)
-                                        breaks=  c(x1, quantile(x=data_dummy$mujeres, probs=Quant) ,x3),                     
-                                        labels = c(0,1),    
-)   
-
-#ancianos
-
-data_dummy$ancianosdummieMean <- cut(data_dummy$ancianos, 
-                                     breaks=  c(x1, mean(data_dummy$ancianos),x3),        
-                                     labels = c(0,1),                           		
-)   
-data_dummy$ancianosdummieMedian <- cut(data_dummy$ancianos,   # Vector de entrada (numÃÂ©rico)
-                                       breaks=  c(x1, median(data_dummy$ancianos),x3),                     
-                                       labels = c(0,1),                           
-)   
-
-data_dummy$ancianosdummieQuantile <- cut(data_dummy$ancianos,   # Vector de entrada (numÃÂ©rico)
-                                         breaks=  c(x1, quantile(x=data_dummy$ancianos, probs=Quant) ,x3),                     
-                                         labels = c(0,1),    
-)   
+##voy a probar con el mod_15 suponiendo que son las variables que nos quedamos
 
 
 
+#mod_15 <-  lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+                densidad + Este + data_dummy_2_AR + data_dummy_2_CA + 
+                data_dummy_2_DC + data_dummy_2_FL + data_dummy_2_IA + data_dummy_2_ID + data_dummy_2_IL + data_dummy_2_IN + 
+                data_dummy_2_KS + data_dummy_2_MA + data_dummy_2_MN + data_dummy_2_MO + 
+                data_dummy_2_MS + data_dummy_2_NE + data_dummy_2_OH + data_dummy_2_TN + data_dummy_2_UT + data_dummy_2_WA, data = data_dummy_22)
 
-#################################################################
-#################################################################
-
-sct <- sum((data1$pje - mean(data1$pje))^2)
-m0 <- lm(pje ~ 1, data = data1)
-sce0 <- sct
-scr0 <- 0
-anova(m0)
-
-m1 <- lm(pje ~ pobreza, data = data1)
-sce1 <- deviance(m1)
-scr1 <- sct - sce1 # en el modelo nulo la SCE es la variabilidad total
-r1.0 <- scr1 - scr0
-anova(m1)
-
-m2 <- lm(pje ~ pobreza + densidad, data = data1)
-
-sce2 <- deviance(m2)
-scr2 <- sct - sce2
-r2.1 <- scr2 - scr1
-anova(m2)
-
-
-m3 <- lm(pje ~ pobreza + densidad + mujeres, data = data1)
-
-sce3 <- deviance(m3)
-scr3 <- sct - sce3
-r3.12 <- scr3 - scr2
-anova(m3)
-
-m4 <- lm(pje ~ pobreza + densidad + mujeres + ahorros, data = data1)
-
-sce4 <- deviance(m4)
-scr4 <- sct - sce4
-r4.123 <- scr4 - scr3
-anova(m4)
-
-m5 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos, data = data1)
-
-sce5 <- deviance(m5)
-scr5 <- sct - sce5
-r5.1234 <- scr5 - scr4
-anova(m5)
-
-m6 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos, data = data1)
-
-sce6 <- deviance(m6)
-scr6 <- sct - sce6
-r6.12345 <- scr6 - scr5
-anova(m6)
-
-m7 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc, data = data1)
-
-sce7 <- deviance(m7)
-scr7 <- sct - sce7
-r7.123456 <- scr7 - scr6
-anova(m7)
-
-m8 <- lm(pje ~ pobreza + densidad + mujeres + ahorros + veteranos + ancianos + ingpc + crimen, data = data1)
-
-sce8 <- deviance(m8)
-scr8 <- sct - sce8
-r8.1234567 <- scr8 - scr7
-anova(m8)
-
-res <- tribble(
-  ~ "Modelo", ~ "SCR", ~"SCE", ~"R",
-  "m0", scr0, sce0, NA,
-  "m1", scr1, sce1, r1.0,
-  "m2", scr2, sce2, r2.1,
-  "m3", scr3, sce3, r3.12,
-  "m4", scr4, sce4, r4.123,
-  "m5", scr5, sce5, r5.1234,
-  "m6", scr6, sce6, r6.12345,
-  "m7", scr7, sce7, r7.123456,
-  "m8", scr8, sce8, r8.1234567,
 )
-res
 
+install.packages("lmtest")
+library(lmtest)
+M0 <- glm(pje_class ~ ., family = binomial(link = "logit"), data = data)
+M1 <- glm(pje_class ~ ., family = binomial(link = "logit"), data = data_dummy_22)
 
-#A tibble: 9 x 4
-#Modelo    SCR     SCE      R
-#<chr>   <dbl>   <dbl>  <dbl>
-#1 m0         0  280213.    NA 
-#2 m1     70344. 209869. 70344.
-#3 m2     80093. 200120.  9749.
-#4 m3     86626. 193586.  6533.
-#5 m4     89456. 190757.  2829.
-#6 m5     90507. 189706.  1051.
-#7 m6     91028. 189185.   521.
-#8 m7     91300. 188913.   273.
-#9 m8     91504. 188708.   204.
-
-# a medida que voy agregando t?rminos la SCR aumenta y la SCE disminuye
-# la diferencia entre 2 SCR sucesivas o SCE sucesivas es la contribucion de la SC secuencial
-# x ej el valor 70344 es el aporte que hace el predictor x1 para explicar la respuesta comparado con un modelo que no tiene ningun predictor
-
-#Layla
-
-#Voy a realizar un EDA del dataset
-glimpse(data)
-
-#Tenemos las siguientes variables como caracteres: condado y estado.
-#particularmente como double todas excepto: ahorros, ingpc y crimen que
-#son de tipo integer.
-
-str(data) 
-#Tenemos 12 variables con un total de 2704 obseerevaciones, el tipo 
-#de dato asociado es "data.table" y "data.frame"
-
-#Analicemos la distribucion de frecuencia por estado
-Frec_abs=table(data$estado)
-Frec_abs
-
-Frec_abs_acum=cumsum(Frec_abs)
-Frec_abs_acum
-
-Frec_rel=prop.table(Frec_abs_acum)*100
-Frec_rel
-
-Frec_rel_abs = cumsum(Frec_rel)*100
-Frec_rel_abs
-
-library(gmodels)
-CrossTable(data$estado, prop.t=F, prop.chisq = F)
-
-#Datos numericos
-summary(data)
-
-#Esta funcion nos muestra un panorama más completo de las variables. 
-describe(data)
-
-#Missings ---- No tenemos 
-sapply(data, function(x) sum(is.na(x)))
-
-#Realicemos algunos histogramas de las variablees mas importantes
-
-histograma_edad <- ggplot(data, aes(x=edad)) +
-  ggtitle("Distribucion de la variable Edad") +
-  geom_histogram(color="#28324a", fill="#3c78d8")
-histograma_edad
-
-#Claramentee es asimetrica hacia la derecha
-histograma_ahorros <- ggplot(data, aes(x=ahorros)) +
-  ggtitle("Distribucion de la variable Ahorros") +
-  geom_histogram(color="#28324a", fill="#3c78d8")
-histograma_ahorros
-
-#ingpc
-histograma_ingpc <- ggplot(data, aes(x=ingpc)) +
-  ggtitle("Distribucion de la variable ingpc") +
-  geom_histogram(color="#28324a", fill="#3c78d8")
-histograma_ingpc
-
-histograma_pobreza <- ggplot(data, aes(x=pobreza)) +
-  ggtitle("Distribucion de la variable Pobreza") +
-  geom_histogram(color="#28324a", fill="#3c78d8")
-histograma_pobreza
-
-#Graficos de dispersion
-ggplot(data = data, aes(x = ahorros, y = edad)) + 
-  geom_point(aes(color = estado), size = 2, alpha = 0.7) +
-  xlab('Ahorros') + 
-  ylab('Edad') +
-  ggtitle('Grafico de Dispersion entre Ahorros y Edad') + 
-  theme_minimal()
-
-#Graficos de dispersion
-ggplot(data = data, aes(x = pobreza, y = mujeres)) + 
-  geom_point(aes(color = estado), size = 2, alpha = 0.7) +
-  xlab('Pobreza') + 
-  ylab('Mujeres') +
-  ggtitle('Grafico de Dispersion entre pobreza y mujeres') + 
-  theme_minimal()
-
-ggplot(data = data, aes(x = pobreza, y = crimen)) + 
-  geom_point(aes(color = estado), size = 2, alpha = 0.7) +
-  xlab('Pobreza') + 
-  ylab('Crimen') +
-  ggtitle('Grafico de Dispersion entre pobreza y crimen') + 
-  theme_minimal()
-
-#Grafico de BoxPlot
-
-ggplot(data, aes(y=pje)) + 
-  geom_boxplot(fill="slateblue", alpha=0.2) 
-
-ggplot(data, aes(y=edad)) + 
-  geom_boxplot(fill="slateblue", alpha=0.2) 
-
-ggplot(data, aes(y=ahorros)) + 
-  geom_boxplot(fill="slateblue", alpha=0.2) 
-
-ggplot(data, aes(y=ingpc)) + 
-  geom_boxplot(fill="slateblue", alpha=0.2) 
-
-ggplot(data, aes(y=pobreza)) + 
-  geom_boxplot(fill="slateblue", alpha=0.2) 
-
-ggplot(data, aes(y=veteranos)) + 
-  geom_boxplot(fill="slateblue", alpha=0.2) 
-
-ggplot(data, aes(y=densidad)) + 
-  geom_boxplot(fill="slateblue", alpha=0.2) 
-
-ggplot(data, aes(y=ancianos)) + 
-  geom_boxplot(fill="slateblue", alpha=0.2) 
-
-ggplot(data, aes(y=crimen)) + 
-  geom_boxplot(fill="slateblue", alpha=0.2) 
-
-#Practicamente en todas las variables de interes, tenemos 
-#muchos outliers, podriamos darle un tratamiento para intentar
-#mejorar los modelos (es decir no quitarlos)
-
-#Por otro lado, viendo los modelos propuestos creo que los mejores
-#hasta ahora son los siguientes: mod_9, mod_10 , mod_11 , mod_12, 
-#mod_14, mod_15
-
-#Si les parece puedo probar darle un tratamiento y replicar lo que 
-#se hizo con el dataset ddl. 
-
-#Grafico de Barra: Crimen x Estado
-ggplot(data = data,
-       mapping = aes(x = estado, y = crimen)) +
-  geom_bar(stat='identity')
-
+lrtest(M0, M1)
 
 
