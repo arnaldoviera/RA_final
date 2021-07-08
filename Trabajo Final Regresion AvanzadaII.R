@@ -283,7 +283,8 @@ mod_4 <- lm(formula = pje ~ ahorros + pobreza + veteranos + mujeres +
               data_dummy_LA + data_dummy_MA + data_dummy_ME + data_dummy_MN + 
               data_dummy_MS + data_dummy_MT + data_dummy_NC + data_dummy_ND + 
               data_dummy_NE + data_dummy_NH + data_dummy_OH + data_dummy_OK + 
-              data_dummy_OR + data_dummy_RI + data_dummy_SD + data_dummy_TN + data_dummy_TX + data_dummy_UT + data_dummy_VT + data_dummy_WI + 
+              data_dummy_OR + data_dummy_RI + data_dummy_SD + data_dummy_TN + 
+              data_dummy_TX + data_dummy_UT + data_dummy_VT + data_dummy_WI + 
               data_dummy_WY, data = data_dummy)
 
 summary(mod_4)
@@ -511,16 +512,40 @@ criterios <- function(m, maxi) {
 }
 
 
-map_dfr(list(mod_1, mod_2, mod_3, mod_4, mod_5, mod_5_A, mod_5_A1 ), criterios, maxi = mod_5_A1)
 
 
 
-# CME -- mod 2, 3, 4 o 7
-# Raj mayor es 9 o 9
-# PRESS el menor es 6 o 9
-# Cp el menor es 9
-# AIC menor es 7 o 9
-# BIC menor es 8 o 9
+mod_maxi <- lm(formula = pje ~ ahorros + pobreza + veteranos + mujeres + #mezcla del modelo 3 + 5_A_1
+     densidad + crimen + data_dummy_AR + data_dummy_AZ + +
+     ahorros : veteranos + ahorros : mujeres+ pobreza : veteranos + pobreza : mujeres +
+     ahorros : densidad + veteranos : mujeres + pobreza : densidad + ahorros : pobreza +
+     veteranos : densidad + mujeres : densidad + data_dummy_CO + 
+     data_dummy_CT + data_dummy_DC + data_dummy_FL + data_dummy_IA + 
+     data_dummy_ID + data_dummy_IL + data_dummy_IN + data_dummy_KS + 
+     data_dummy_LA + data_dummy_MA + data_dummy_ME + data_dummy_MN + 
+     data_dummy_MS + data_dummy_MT + data_dummy_NC + data_dummy_ND + 
+     data_dummy_NE + data_dummy_NH + data_dummy_NM + data_dummy_NV + 
+     data_dummy_NY + data_dummy_OH + data_dummy_OK + data_dummy_OR + 
+     data_dummy_PA + data_dummy_RI + data_dummy_SD + data_dummy_TN + 
+     data_dummy_TX + data_dummy_UT + data_dummy_VT + data_dummy_WI + 
+     data_dummy_WY, data = data_dummy_1)
+
+
+
+map_dfr(list(mod_1, mod_2, mod_3, mod_4, mod_5, mod_5_A, mod_5_A1, mod_maxi ), criterios, maxi = mod_maxi) #agregué en la la
+
+
+#CME  R2Aj   PRESS    Cp    AIC    BIC
+#<dbl> <dbl>   <dbl> <dbl>  <dbl>  <dbl>
+ # 1  70.1 0.323 195155. 1439. 11502. 11555.
+##2  47.3 0.544 133391.  142. 10484. 10814.
+#3  47.3 0.544    Inf   127. 10469. 10722.
+#4  47.8 0.539    Inf   150. 10491. 10709.
+#5  49.3 0.525 137985.  228. 10564. 10712.
+#6  48.4 0.532 132178.  172. 10509. 10656.
+#7  47.8 0.538 131781.  147. 10485. 10686.
+#8  45.8 0.556    Inf    53  10392. 10705.
+
 
 ############################################################
 
