@@ -1,0 +1,589 @@
+---
+title: "Regresión Avanzada"
+author: Gibertini Lopez de Maturana, Jorgelina y Viera, Arnaldo
+date: "Agosto de 2021"
+output:
+  html_document:
+    code_folding: show
+    theme: journal
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+subtitle: TP Final - Revisión
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r, include=FALSE, eval=TRUE}
+
+library(ggplot2)
+library(tidyr)
+library(alr4)
+library(ISLR)
+library(GGally)
+library(UsingR)
+library(data.table)
+library(funModeling)
+library(scales)
+library(dummies)
+library(kableExtra)
+library(psych)
+library(glmnet)
+library(dplyr)
+library(leaps)
+library(UsingR)
+library(tidyverse)
+library(MASS)
+library(glmnet)
+library(leaps)
+library(purrr)
+library(corrplot)
+library(lmtest)
+library(vcd)
+library(sf)
+library(plotly)
+library(RCurl)
+library(psych)
+```
+
+# Introducción
+
+En las elecciones presidenciales de Estados Unidos llevadas a cabo en 1992 se enfrentaron George Bush (padre), representante del partido Republicano, y Bill Clinton, candidato por el partido Demócrata. Bush era presidente en ese momento y buscaba la reelección, pero perdió a manos de Clinton, quien finalmente gobernaría el país entre 1993 y 2001.
+El conjunto de datos a analizar en este Trabajo Práctico contiene información sobre el porcentaje de votos obtenido por Clinton en cada condado de Estados Unidos, junto con información social, económica
+y demográfica de cada uno de ellos.
+
+# Parte I
+
+A través de un modelo de Regresión Lineal Múltiple ajustado por mínimos 
+cuadrados ordinarios, se estudiará el porcentaje de los votos obtenidos por el candidato Bill Clinton en cada uno de los condados estadounidenses en las elecciones presidenciales del año 1992.
+
+En una primera instancia, se procedió a cargar el dataset y realizar un 
+análisis exploratorio de los datos.
+
+## 1. EDA (Exploratory Data Analysis)
+
+```{r, include=FALSE, eval=TRUE}
+
+#Arnaldo
+setwd("C:/Users/vieraa/Documents/GitHub/RA_final" )   
+
+#Jorgelina
+#setwd("C:/Users/jgiberti/Documents/Univ. Austral - Maestria en Ciencias de Datos/10. Regresion Avanzada/TP/" )  
+
+data <- fread("clinton.txt")
+
+```
+
+El dataset contiene `r ncol(data)` variables y `r nrow(data)`, siendo una estructura de tipo data frame.
+
+```{r, include=TRUE, eval=TRUE, echo=FALSE}
+head(data) 
+
+```
+
+Variables como *condado* y *estado* son de tipo **caracter**, mientras que las restantes son **numéricas**. No se encontraron valores faltantes.
+
+Los principales estadísticos resúmenes se pueden observar en el siguiente cuadro:
+
+```{r, include=TRUE, eval=TRUE, echo=FALSE}
+
+#str(data) 
+#summary(data)
+describe(data)
+
+#sapply(data, function(x) sum(is.na(x)))
+
+```
+
+
+### 1. 1. Análisis de Correlación entre las variables
+
+El siguiente cuadro combina en un único gráfico diagramas de dispersión, distribución de las variables y los valores de correlación.
+
+
+```{r, include=TRUE, eval=TRUE, echo=FALSE, fig.align='center', out.width='95%'}
+
+data1<- dplyr::select(data, pje:crimen)
+
+grafico1<-ggpairs(data1,aes(alpha = 14.5), 
+                  upper = list(continuous = wrap("cor", size = 3)),
+                  title="Grafico 1: correlacion entre las variables") 
+
+grafico1
+
+
+```
+
+Se puede observar que la variable explicativa *pobreza* es la que tiene un mayor grado de relación lineal con la variable respuesta *pje* (0.501). 
+
+Las variables *pobreza*  e *ingpc* son las que mayor correlación presentan entre todas las variables del dataset en sentido inverso (-0,617). 
+
+El segundo mayor grado de relación se presenta entre las variables *veteranos* y *edad* (0.526). En tercer lugar se encuentra la correlación entre las variables *ancianos* y *edad* (0.48). 
+
+
+### 1. 2. Análisis de distribución de las variables
+
+```{r, include=TRUE, eval=TRUE, echo=FALSE, fig.align='center'}
+
+multi.hist(x = data1, dcol = c("blue", "red"), dlty = c("dotted", "solid"),
+           main = NULL)
+
+```
+
+Procediendo con el análisis de la distribución de las variables, puede verse que gran cantidad de ellas parecen acercarse bastante a una distribución normal, dado el número de observaciones con las que se cuenta.
+
+Especial mención merece la distribución *densidad*, altamente sesgada hacia la derecha.
+
+Se realizó también un análisis visual entre cada una de las variables 
+explicativas y la respuesta, reforzando los resultados mencionados.
+
+```{r, include=FALSE, eval=TRUE, echo=FALSE}
+
+data %>%
+  ggplot(aes(edad, pje)) +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x = "Edad", y = "PJE")
+
+data %>%
+  ggplot(aes(ahorros, pje)) +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x = "Ahorros", y = "PJE")
+
+data %>%
+  ggplot(aes(pobreza, pje)) +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x = "Pobreza", y = "PJE")
+
+data %>%
+  ggplot(aes(veteranos, pje)) +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x = "Veteranos", y = "PJE")
+
+data %>%
+  ggplot(aes(mujeres, pje)) +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x = "Mujeres", y = "PJE")
+
+data %>%
+  ggplot(aes(densidad, pje)) +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x = "Densidad", y = "PJE")
+
+data %>%
+  ggplot(aes(ancianos, pje)) +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x = "Ancianos", y = "PJE")
+
+data %>%
+  ggplot(aes(crimen, pje)) +
+  geom_point() +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(x = "Crimen", y = "PJE")
+
+```
+
+## 2. Modelos de regresión lineal múltiple
+
+### 2. 1. Generación de modelos
+
+Se generaron distintos modelos de regresión lineal múltiple a los fines de 
+elegir el más conveniente de todos. A continuación se detallarán las principales características de los mismos.
+
+```{r, include=FALSE, eval=TRUE, echo=TRUE}
+
+mod_1<- lm(pje ~ ingpc + edad + ahorros + pobreza + veteranos + mujeres + densidad + ancianos + crimen , data = data)
+summary(mod_1)
+anova(mod_1)
+
+```
+
+El **modelo 1** (mod_1) incluye a todas las variables cuantitativas del dataset. El R2 ajustado es de 0.32, es, decir, este modelo es capaz de explicar el 32% de la variancia observada en el porcentaje de votos con todas las variables cuantitativas.
+Dada la baja capacidad explicativa, se decide entonces incorporar *estados* como variables dummies al dataset. El estado de "Alabama" se la considera como categoria de referencia.
+
+
+```{r, include=FALSE, eval=TRUE, echo=TRUE}
+
+data_dummy <- data
+
+data_dummy <- rename(data_dummy, c("data_dummy" = "estado"))
+
+data_dummy <- cbind(data_dummy, dummy.data.frame("data_dummy", data = data_dummy, sep ="_"))
+
+#en todo este choclo pasa que se duplican las columnas, inclusive las que son dummys y no dummys. 
+#variables y columnas que queremos eliminar, que no aparezcan
+data_dummy$condado <- NULL
+data_dummy$condado <- NULL
+data_dummy$data_dummy_AL <- NULL #categoría de referencia
+data_dummy$data_dummy_AL <- NULL #categoría de referencia
+data_dummy$data_dummy <- NULL
+
+#columnas repetidas: solo elimino 1 sola para que quede bien el df
+data_dummy$pje <- NULL
+data_dummy$edad <- NULL
+data_dummy$ingpc<- NULL
+data_dummy$pobreza <- NULL
+data_dummy$veteranos <- NULL
+data_dummy$mujeres <- NULL
+data_dummy$densidad <- NULL
+data_dummy$ancianos <- NULL
+data_dummy$crimen <- NULL
+data_dummy$ahorros <- NULL
+
+mod_2 <- lm(pje ~ ., data = data_dummy)
+summary(mod_2) 
+anova(mod_2)
+
+```
+
+
+El **modelo 2** (mod_2) considera ahora los estados como variables dummy. El R2 ajustado es de 0.54, es, decir, este modelo es capaz de explicar el 54% de la variancia observada en el porcentaje de votos con todas las variables incluidas en el modelo.
+
+El summary del modelo 2 arrojó que algunas de las variables cuantitativas no son significativas (de acuerdo al análisis de los respectivos p-value) como ser: edad, crimen y ancianos.
+Se decidió entonces conformar un **modelo maxi** (mod_maxi) con todas las interacciones y todas las variables dummies y aplicar el método backward sobre el mismo para dejar sólo aquellas con aportes significativos.
+
+```{r, include=FALSE, eval=TRUE, echo=TRUE}
+
+mod_maxi <- lm(formula =pje ~ edad + ahorros + ingpc + pobreza + veteranos + mujeres + densidad + ancianos + crimen + 
+                 ahorros:ingpc + ingpc:pobreza + ingpc:densidad + ingpc:ancianos + ingpc:crimen +
+                 ahorros:veteranos + ahorros:mujeres + pobreza: veteranos  + pobreza:mujeres + ahorros:densidad + veteranos : mujeres +
+                 pobreza:densidad  + ahorros:pobreza + veteranos:densidad +  mujeres:densidad + 
+                 data_dummy_AR + data_dummy_AZ + data_dummy_CA + data_dummy_CO + data_dummy_CT + data_dummy_DC + data_dummy_DE + data_dummy_FL + data_dummy_GA + data_dummy_IA +
+                 data_dummy_ID + data_dummy_IL + data_dummy_IN + data_dummy_KS + data_dummy_KY + data_dummy_LA + data_dummy_MA + data_dummy_MD + data_dummy_ME + data_dummy_MI +
+                 data_dummy_MN + data_dummy_MO + data_dummy_MS + data_dummy_MT + data_dummy_NC + data_dummy_ND + data_dummy_NE + data_dummy_NH + data_dummy_NJ + data_dummy_NM +
+                 data_dummy_NV + data_dummy_NY + data_dummy_OH + data_dummy_OK + data_dummy_OR + data_dummy_PA + data_dummy_RI + data_dummy_SC + data_dummy_SD + data_dummy_TN + 
+                 data_dummy_TX + data_dummy_UT + data_dummy_VA + data_dummy_VT + data_dummy_WA + data_dummy_WI + data_dummy_WV + data_dummy_WY, data=data_dummy )
+summary(mod_maxi)
+anova(mod_maxi)
+
+stepAIC(
+  object = lm(pje ~ edad + ahorros + ingpc + pobreza + veteranos + mujeres + densidad + ancianos + crimen + 
+                ahorros:ingpc + ingpc:pobreza + ingpc:densidad + ingpc:ancianos + ingpc:crimen +
+                ahorros:veteranos + ahorros:mujeres + pobreza: veteranos  + pobreza:mujeres + ahorros:densidad + veteranos : mujeres +
+                pobreza:densidad  + ahorros:pobreza + veteranos:densidad +  mujeres:densidad + 
+                data_dummy_AR + data_dummy_AZ + data_dummy_CA + data_dummy_CO + data_dummy_CT + data_dummy_DC + data_dummy_DE + data_dummy_FL + data_dummy_GA + data_dummy_IA +
+                data_dummy_ID + data_dummy_IL + data_dummy_IN + data_dummy_KS + data_dummy_KY + data_dummy_LA + data_dummy_MA + data_dummy_MD + data_dummy_ME + data_dummy_MI +
+                data_dummy_MN + data_dummy_MO + data_dummy_MS + data_dummy_MT + data_dummy_NC + data_dummy_ND + data_dummy_NE + data_dummy_NH + data_dummy_NJ + data_dummy_NM +
+                data_dummy_NV + data_dummy_NY + data_dummy_OH + data_dummy_OK + data_dummy_OR + data_dummy_PA + data_dummy_RI + data_dummy_SC + data_dummy_SD + data_dummy_TN + 
+                data_dummy_TX + data_dummy_UT + data_dummy_VA + data_dummy_VT + data_dummy_WA + data_dummy_WI + data_dummy_WV + data_dummy_WY, data=data_dummy), 
+  
+  scope = list(upper = lm(pje ~ 1, data = data_dummy)), 
+  direction = "backward",
+  trace = F 
+)
+
+
+mod_3 <- lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+              densidad + ancianos + crimen + data_dummy_AR + data_dummy_AZ + 
+              data_dummy_CO + data_dummy_CT + data_dummy_DC + data_dummy_DE + 
+              data_dummy_FL + data_dummy_GA + data_dummy_IA + data_dummy_ID + 
+              data_dummy_IL + data_dummy_IN + data_dummy_KS + data_dummy_LA + 
+              data_dummy_MA + data_dummy_MN + data_dummy_MS + data_dummy_MT + 
+              data_dummy_NC + data_dummy_ND + data_dummy_NE + data_dummy_NH + 
+              data_dummy_NM + data_dummy_NV + data_dummy_OH + data_dummy_OK + 
+              data_dummy_OR + data_dummy_RI + data_dummy_SD + data_dummy_TN + 
+              data_dummy_TX + data_dummy_UT + data_dummy_VA + data_dummy_VT + 
+              data_dummy_WI + data_dummy_WV + data_dummy_WY + ahorros:ingpc + 
+              ingpc:pobreza + ingpc:ancianos + ingpc:crimen + pobreza:veteranos + 
+              pobreza:mujeres + veteranos:densidad, data = data_dummy)
+summary(mod_3)
+anova(mod_3)
+par(mfrow = c(2, 2)) 
+plot(mod_3)
+par(mfrow = c(1, 1))
+
+```
+
+El **modelo 3** (mod_3) incluyó aquellas variables que resultaron de aplicar el método backward. El R2 es aún mayor (0.56), es, decir, este modelo es capaz de explicar el 56% de la variancia observada.
+
+
+Se decide comparar los 4 modelos construidos (mod_1, mod_2, mod_3 y mod_maxi) y elegir aquél que mejor performace tiene dentro de un conjunto de métricas estadísticas (CME, R2Aj, Press, Cp, AIC y BIC).
+
+```{r,include=TRUE, eval=TRUE, echo=FALSE}
+
+ criterios <- function(m, maxi) {
+  
+  SCE <- deviance(m)
+  n <- length(residuals(m))
+  p <- length(coefficients(m)) #incluye intercepto
+  
+  cme <- SCE/(n-p) 
+  
+  r2aj <- 1 - ((n-1)/(n-p)) * (1-summary(m)$r.squared)
+  
+  estpress <- sum((residuals(m)/(1-hatvalues(m)))^2) 
+  
+  mcp <- SCE/(deviance(maxi)/(n-length(coefficients(maxi)))) + 2*p - n
+  
+  akaike <- n * log(SCE/n) + 2*p
+  
+  schwarz <- n * log(SCE/n) + p*log(n) 
+  
+  tibble(CME = cme, R2Aj = r2aj, PRESS = estpress, Cp = mcp, AIC = akaike, BIC = schwarz)
+  
+}
+
+map_dfr(list(mod_1, mod_2, mod_3, mod_maxi), criterios, maxi = mod_maxi) 
+
+```
+
+Analizando el cuadro de arriba,  el modelo 3 (tercer renglón)) es que el presenta mejores resultados (menor CME, CP menor, AIC menor y BIC menor)
+
+
+```{r, include=FALSE, echo=FALSE}
+
+plot(mod_3)
+dwtest(mod_3)$statistic
+plot(cooks.distance(mod_3))
+influence.measures(mod_3)
+
+```
+
+Verificación de los supuestos del modelo:
+El análisis visual de la relación entre las variable respuesta y las explicativa no es perfectamente lineal (esto fue visto anteriormente). Por otro lado, el gráfico de los residuos en función del ajuste aparenta ser una nube de puntos sin identificar algún comportamiento de sospecha. Por otro lado, se realizó el test de Durbin-Watson para evaluar la independecia de los residuos y se confimó que tales residuos son independientes.
+
+Mediante la visualizacion del gráfico Q-Q se podría pensar que no se estaría cumpliendo el supuesto de normalidad; se observa una distribución con colas pesadas. Por último, para evaluar la influencia de las observaciones se analizó la distancia de Cook y no se observó alguna observación con distancia de Cook > 1, es decir, no se tendrían observaciones influyentes.
+
+```{r, include=FALSE, echo=FALSE}
+
+vif(mod_3)
+
+```
+
+Respecto al supuesto de colinealidad, se observa valores de VIF elevados (VIF > 5) para distintas variables e interacciones de las variables. Esto significa que el modelo  presenta indicios de colinealidad.
+
+Mediante un análisis exhaustivo de ir quitando interacciones para ver si el modelo seguía presentando colinealidad, se llega a la conclusión que sacando todas las interacciones, el nuevo modelo (el mod_4) presenta valores de VIF < 5.
+
+```{r, include=FALSE, eval=TRUE, echo=TRUE}
+
+mod_4 <- lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+              densidad + ancianos + crimen + data_dummy_AR + data_dummy_AZ + 
+              data_dummy_CO + data_dummy_CT + data_dummy_DC + data_dummy_DE + 
+              data_dummy_FL + data_dummy_GA + data_dummy_IA + data_dummy_ID + 
+              data_dummy_IL + data_dummy_IN + data_dummy_KS + data_dummy_LA + 
+              data_dummy_MA + data_dummy_MN + data_dummy_MS + data_dummy_MT + 
+              data_dummy_NC + data_dummy_ND + data_dummy_NE + data_dummy_NH + 
+              data_dummy_NM + data_dummy_NV + data_dummy_OH + data_dummy_OK + 
+              data_dummy_OR + data_dummy_RI + data_dummy_SD + data_dummy_TN + 
+              data_dummy_TX + data_dummy_UT + data_dummy_VA + data_dummy_VT + 
+              data_dummy_WI + data_dummy_WV + data_dummy_WY , data = data_dummy)
+summary(mod_4)
+
+vif(mod_4)
+par(mfrow = c(2, 2)) 
+plot(mod_4)
+par(mfrow = c(1, 1))
+rstudent(mod_4)
+plot(rstudent(mod_4))
+plot(cooks.distance(mod_4))
+influence.measures(mod_4)
+
+```
+
+Siguiendo con el mismo procedimiento de verificación de lo supuestos, en este modelo 4 se observa que la observación 1602 correspondiente al condado de Kings (estado de Brookling) registra el máximo valor de crimen y densidad. Por tanto, se decide excluir esta observacón del análisis y de esta manera queda conformado el último modelo (mod_4_A).
+
+Verificación de los supuestos del modelo **mod_4_A**: 
+
+Al igual que los modelos anteriores, el gráfico de los residuos en función del ajuste aparenta ser una nube de puntos sin identificar algún comportamiento de sospecha. Sin embargo, realizamos el test de hipótesis de Breusch-Pagan para determinar la existencia o no de varancia constante. El resultado del valor del estadístico fue: BP = 151.13, df = 32, p-value < 2.2e-16 indicando que no se verificaria el supuesto de homocedasticidad (variancia no es constante). 
+
+Por otro lado, se realizó el test de Durbin-Watson para evaluar la independecia de los residuos y se confimó nuevamente que tales residuos son independientes. El gráfico Q-Q muestra nuevamente una distribución con colas pesadas, indicando la no normalidad. Por último, el cálculo de la distancia de Cook toma valores < 1.
+
+```{r, include=TRUE, eval=TRUE, echo=FALSE}
+
+excluir <- c(1602)
+data_dummy_1 <- slice(data_dummy, -excluir)
+
+mod_4_A <- lm(formula = pje ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+              densidad + ancianos + crimen + data_dummy_AR + data_dummy_AZ + 
+              data_dummy_CO + data_dummy_CT + data_dummy_DC + data_dummy_DE + 
+              data_dummy_FL + data_dummy_GA + data_dummy_IA + data_dummy_ID + 
+              data_dummy_IL + data_dummy_IN + data_dummy_KS + data_dummy_LA + 
+              data_dummy_MA + data_dummy_MN + data_dummy_MS + data_dummy_MT + 
+              data_dummy_NC + data_dummy_ND + data_dummy_NE + data_dummy_NH + 
+              data_dummy_NM + data_dummy_NV + data_dummy_OH + data_dummy_OK + 
+              data_dummy_OR + data_dummy_RI + data_dummy_SD + data_dummy_TN + 
+              data_dummy_TX + data_dummy_UT + data_dummy_VA + data_dummy_VT + 
+              data_dummy_WI + data_dummy_WV + data_dummy_WY , data = data_dummy_1)
+summary(mod_4_A)
+anova(mod_4_A)
+
+par(mfrow = c(2, 2)) 
+plot(mod_4_A)
+par(mfrow = c(1, 1))
+dwtest(mod_4_A) 
+dwtest(mod_4_A) 
+library(lmtest)
+bptest(mod_4_A)
+plot(cooks.distance(mod_4_A))
+
+```
+
+
+
+# Parte II
+
+Deberá ajustarse un modelo de regresión logística con enlace canónico, cuyo 
+componente sistemático coincida con el del modelo elegido en la sección 
+anterior.
+
+## 3. Modelo de regresión logística aplicado a **mod_4_A**. 
+
+Para la resolución de esta consigna se creó en primer lugar la variable dicotómica **clase**, tomando el valor 1 para aquellos casos en los cuales porcentaje de votos obtenidos por Clinton es > 50 y 0 para el caso contrario.  
+
+```{r, include=FALSE, eval=TRUE, echo=FALSE}
+
+data_dummy_1$pje_class <- cut(data_dummy_1$pje, 
+                              breaks= c(min(data_dummy_1$pje),
+                              50.000000, max(data_dummy_1$pje)),       
+                              labels = c(0,1),
+) 
+
+table(data_dummy_1$pje_class)
+
+```
+
+Si bien se evidenciaron indicios de un cierto desbalanceo respecto a la probabilidad de éxito, no se realizaron modificaciones como consecuencia del mismo, por entender que excede el objeto del presente trabajo. 
+
+Se procedió entonces a realizar la regresión logística utilizando como input el modelo elegido. Se utilizó una distribución Binomial para la variable respuesta con un enlace canónico "logit".
+
+```{r, include=FALSE, eval=TRUE, echo=FALSE}
+
+mod_4_A_glm <- glm(pje_class ~ ahorros + ingpc + pobreza + veteranos + mujeres + 
+    densidad + ancianos + crimen + data_dummy_AR + data_dummy_AZ + 
+    data_dummy_CO + data_dummy_CT + data_dummy_DC + data_dummy_DE + 
+    data_dummy_FL + data_dummy_GA + data_dummy_IA + data_dummy_ID + 
+    data_dummy_IL + data_dummy_IN + data_dummy_KS + data_dummy_LA + 
+    data_dummy_MA + data_dummy_MN + data_dummy_MS + data_dummy_MT + 
+    data_dummy_NC + data_dummy_ND + data_dummy_NE + data_dummy_NH + 
+    data_dummy_NM + data_dummy_NV + data_dummy_OH + data_dummy_OK + 
+    data_dummy_OR + data_dummy_RI + data_dummy_SD + data_dummy_TN + 
+    data_dummy_TX + data_dummy_UT + data_dummy_VA + data_dummy_VT + 
+    data_dummy_WI + data_dummy_WV + data_dummy_WY  , family = binomial(link = "logit"), data = data_dummy_1)
+
+summary(mod_4_A_glm)
+anova(mod_4_A_glm,test="Chisq")
+
+```
+
+Al tratarse de una regresión logística, la interpretación de los coeficientes adquiere ciertas particularidades. Las variables con signo positivo tendrán impacto en dicha dirección sobre la variable predicha, mientras que lo contrario sucederá con las negativas. Aquellas de mayor magnitud impactarán proporcionalmente más que las de menor magnitud relativa, pero dicho impacto no será lineal (a diferencia del punto anterior).
+
+Esto significa que, si el individuo reside en Arkansas (AR), el odds de voto positivo para Clinton aumenta en exp(2.730), es decir, un 16 veces mayor si el condado pertenece al estado de Arkansas; siempre que todas las variables restantes se mantengan constantes. En cambio, si el individuo reside en un condado que pertenece a Kansas (KS), el odds de voto positivo para Clinton disminuye en exp(-1.750), es decir, más del (-)80% , siempre que todas las variables restantes se mantengan constantes. 
+
+Comparando el ajuste global de este modelo respecto del modelo de regresión múltiple seleccionado en la parte I, podemos decir que todas las variables del primer modelo fueron significativas, mientras que en el caso de la regresión logística, muchas no lo fueron (sólo 10 significativas de 28 que incluyó el modelo). El siguiente cuadro especifica las variables que son significativas en el modelo logit:
+
+
+```{r, include=TRUE, eval=TRUE, echo=FALSE}
+
+sig.var<- summary(mod_4_A_glm)$coeff[-1,4] < 0.01
+names(sig.var)[sig.var == TRUE]
+
+```
+
+
+```{r, include=FALSE, eval=TRUE, echo=FALSE}
+
+res.d <- residuals(mod_4_A_glm, type = "deviance")
+
+res.d.sig <- abs(res.d) > 2
+#table(res.d.sig)
+
+res.student <- rstudent(mod_4_A_glm)
+res.orde <- sort(res.student, decreasing = TRUE)
+head(res.orde)
+table(abs(res.student) > 2)
+
+library(car)
+residualPlots(mod_4_A_glm, type = "deviance", cex = 0.6)
+
+distancias.cook <- cooks.distance(mod_4_A_glm)
+
+head(distancias.cook)
+table(distancias.cook > 1)
+
+par(mfrow = c(2, 2))
+plot(mod_4_A_glm, cex = 0.6)
+
+par(mfrow = c(1, 2))
+plot(mod_4_A_glm, which = 4)
+plot(mod_4_A_glm, which = 6)
+
+```
+
+```{r, include=TRUE, eval=TRUE, echo=FALSE}
+
+par(mfrow = c(1, 2))
+plot(mod_4_A_glm, which = 4)
+plot(mod_4_A_glm, which = 6)
+
+```
+
+
+El modelo en conjunto es significativo. No se observa una distancia de Cook significativa para ninguna observación, tampoco valores atípicos. Los residuos significativos son de menos del 3%.
+
+### 3. 1. Análisis de los intervalos de Confianza para los coeficientes
+
+```{r, include=FALSE, eval=TRUE, echo=FALSE}
+
+confint(mod_4_A_glm)
+confint.default(mod_4_A_glm)
+
+```
+
+Del análisis de los intervalos de confianza para los coeficientes estimados del modelo se observó que:
+
+AGREGAR
+
+### 3. 2. Comparación de las predicciones con las observaciones
+
+Con este modelo podemos saber la probabilidad, dadas unas determinadas características, de que el porcentaje de votos obtenidos por Clinton sea mayor al 50% (valor 1 de la variable).
+
+Para evaluar el modelo, se puede comparar el valor real (si pje > 50) con el predicho por el modelo.
+
+```{r, include=TRUE, eval=TRUE, echo=FALSE} 
+
+predicciones <- ifelse(test = mod_4_A_glm$fitted.values > 0.5, yes = 1, no = 0)
+matriz_confusion <- table(mod_4_A_glm$model$pje_class, predicciones,
+                          dnn = c("observaciones", "predicciones"))
+
+matriz_confusion 
+
+```
+
+En 60 casos el modelo predijo que se votaría al candidato cuando en realidad no sucedió, mientras que en 231 casos el modelo predijo que no se votaría a Clinton cuando el voto fué positivo. 
+
+Sólo 165 de los 396 que votaron a Clinton pudieron predecirse, por lo cual el porcentaje de falsos negativos resultó alto. Quizás seleccionando otro umbral (threshold diferente a 0.5) podría mejorar la exactitud del modelo.
+
+El modelo es capaz de clasificar correctamente el 89% de las observaciones
+((2246+165)/(2246+165+231+60)=2411/2702=0.892) 
+
+Por último, se adjuntan algunos indicadores de interés:
+
+- *Sensibilidad*: porcentaje de individuos correctamente identificados como positivos: 165/396=41.6%.
+- *Especificidad*: porcentaje de individuos correctamente identificados como negativos: 2246/2306=97.3%.
+- *Falsos Negativos*: porcentaje de individuos incorrectamente identificados como negativos: 231/396=58.3%.
+- *Falsos Positivos*: porcentaje de individuos incorrectamente identificados como positivos: 60/2306=2.6%.
+
+
+# Conclusiones
+
+El presente estudio trató de encontrar un modelo con ajuste óptimo para predecir el porcentaje de los votos obtenidos por Bill Clinton en cada uno de los condados estadounidenses construyendo tanto sea un modelo de regresión lineal múltiple, como un modelo de regresión logística. 
+
+El modelo de regresión lineal elegido (mod_4_A) es el que cumple con el 
+criterio de parsimonia. No incluye interacciones y cumple con los supuestos que el modelo conlleva.
+
+Aplicando el mismo modelo a una regresión logística se verificó que muchas 
+variables pierden significatividad en relación a la regresión lineal múltiple. 
+
+Si bien la performance general del modelo de regresión logística es buena, con un 89% de aciertos.
+
+Como conclusión, la pertenencia geográfica a un cierto estado parece condicionar la probabilidad de voto a favor de Clinton.
